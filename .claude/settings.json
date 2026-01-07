@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "# Prevent editing on main branch\n[ \"$(git branch --show-current)\" != \"main\" ] || { echo '{\"block\": true, \"message\": \"Cannot edit files on main branch. Create a feature branch first.\"}' >&2; exit 2; }",
+            "command": "bash -c '[ \"$(git branch --show-current)\" != \"main\" ] || { echo \"{\\\"block\\\": true, \\\"message\\\": \\\"Cannot edit files on main branch. Create a feature branch first.\\\"}\" >&2; exit 2; }'",
             "timeout": 5
           }
         ]
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "# Auto-format JS/TS files with Prettier (or Biome)\nif [[ \"$CLAUDE_TOOL_INPUT_FILE_PATH\" =~ \\.(js|jsx|ts|tsx)$ ]]; then\n  file_path=\"${CLAUDE_TOOL_INPUT_FILE_PATH}\"\n  # Use prettier (swap for biome if preferred)\n  npx prettier --write \"$file_path\" 2>&1\n  exit_code=$?\n  if [ $exit_code -ne 0 ]; then\n    echo '{\"feedback\": \"Formatting failed. Check file for syntax errors.\"}' >&2\n    exit 1\n  else\n    echo '{\"feedback\": \"Formatting applied.\", \"suppressOutput\": true}'\n  fi\nfi",
+            "command": "bash -c 'case \"$CLAUDE_TOOL_INPUT_FILE_PATH\" in *.py) uv run ruff format \"$CLAUDE_TOOL_INPUT_FILE_PATH\" 2>&1 && echo \"{\\\"feedback\\\": \\\"Formatted with Ruff.\\\", \\\"suppressOutput\\\": true}\" || echo \"{\\\"feedback\\\": \\\"Ruff format failed.\\\"}\" >&2 ;; esac'",
             "timeout": 30
           }
         ]
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "# Auto-install dependencies when package.json changes\nif [[ \"$CLAUDE_TOOL_INPUT_FILE_PATH\" =~ package\\.json$ ]]; then\n  echo '{\"feedback\": \"Installing dependencies...\"}' >&2\n  npm install >/dev/null 2>&1 && echo '{\"feedback\": \"Dependencies installed.\", \"suppressOutput\": true}' || {\n    echo '{\"feedback\": \"Failed to install dependencies.\"}' >&2\n    exit 1\n  }\nfi",
+            "command": "bash -c 'case \"$CLAUDE_TOOL_INPUT_FILE_PATH\" in pyproject.toml|requirements*.txt) echo \"{\\\"feedback\\\": \\\"Installing dependencies...\\\"}\" >&2; uv sync >/dev/null 2>&1 && echo \"{\\\"feedback\\\": \\\"Dependencies installed.\\\", \\\"suppressOutput\\\": true}\" || echo \"{\\\"feedback\\\": \\\"Failed to install dependencies.\\\"}\" >&2 ;; esac'",
             "timeout": 60
           }
         ]
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "# Auto-run tests when test files change\nif [[ \"$CLAUDE_TOOL_INPUT_FILE_PATH\" =~ \\.test\\.(js|jsx|ts|tsx)$ ]]; then\n  echo '{\"feedback\": \"Running tests...\"}' >&2\n  npm test -- --findRelatedTests \"${CLAUDE_TOOL_INPUT_FILE_PATH}\" --passWithNoTests 2>&1 | tail -30\n  exit_code=${PIPESTATUS[0]}\n  if [ $exit_code -eq 0 ]; then\n    echo '{\"feedback\": \"Tests passed.\"}'\n  else\n    echo '{\"feedback\": \"Tests failed. See output above.\"}' >&2\n  fi\nfi",
+            "command": "bash -c 'case \"$CLAUDE_TOOL_INPUT_FILE_PATH\" in */test_*.py|*_test.py|*/tests/*.py) echo \"{\\\"feedback\\\": \\\"Running tests...\\\"}\" >&2; uv run pytest \"$CLAUDE_TOOL_INPUT_FILE_PATH\" -x -q 2>&1 | tail -30; if [ ${PIPESTATUS[0]} -eq 0 ]; then echo \"{\\\"feedback\\\": \\\"Tests passed.\\\"}\"; else echo \"{\\\"feedback\\\": \\\"Tests failed. See output above.\\\"}\" >&2; fi ;; esac'",
             "timeout": 90
           }
         ]
@@ -65,7 +65,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "# Type-check TypeScript files\nif [[ \"$CLAUDE_TOOL_INPUT_FILE_PATH\" =~ \\.(ts|tsx)$ ]]; then\n  echo '{\"feedback\": \"Checking TypeScript types...\"}' >&2\n  output=$(npx tsc --noEmit 2>&1)\n  exit_code=$?\n  if [ $exit_code -eq 0 ]; then\n    echo '{\"feedback\": \"No TypeScript errors.\", \"suppressOutput\": true}'\n  else\n    errors=$(echo \"$output\" | grep -A 2 \"error TS\" | head -30)\n    if [ -n \"$errors\" ]; then\n      echo '{\"feedback\": \"TypeScript found type errors:\"}' >&2\n      echo \"$errors\" >&2\n    fi\n  fi\n  # Non-blocking\n  exit 0\nfi",
+            "command": "bash -c 'case \"$CLAUDE_TOOL_INPUT_FILE_PATH\" in *.py) echo \"{\\\"feedback\\\": \\\"Type checking with pyright...\\\"}\" >&2; output=$(uv run pyright \"$CLAUDE_TOOL_INPUT_FILE_PATH\" 2>&1); if [ $? -eq 0 ]; then echo \"{\\\"feedback\\\": \\\"No type errors.\\\", \\\"suppressOutput\\\": true}\"; else echo \"$output\" | head -20 >&2; echo \"{\\\"feedback\\\": \\\"Pyright found type errors.\\\"}\" >&2; fi; exit 0 ;; esac'",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'case \"$CLAUDE_TOOL_INPUT_FILE_PATH\" in *.py) output=$(uv run ruff check \"$CLAUDE_TOOL_INPUT_FILE_PATH\" 2>&1); if [ $? -eq 0 ]; then echo \"{\\\"feedback\\\": \\\"Ruff check passed.\\\", \\\"suppressOutput\\\": true}\"; else echo \"$output\" | head -20 >&2; echo \"{\\\"feedback\\\": \\\"Ruff found lint issues.\\\"}\" >&2; fi; exit 0 ;; esac'",
             "timeout": 30
           }
         ]

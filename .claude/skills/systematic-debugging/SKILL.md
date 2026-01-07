@@ -1,150 +1,203 @@
 ---
 name: systematic-debugging
-description: Four-phase debugging methodology with root cause analysis. Use when investigating bugs, fixing test failures, or troubleshooting unexpected behavior. Emphasizes NO FIXES WITHOUT ROOT CAUSE FIRST.
+description: Four-phase debugging methodology with root cause analysis for Django. Use when investigating bugs, fixing test failures, or troubleshooting unexpected behavior. Emphasizes NO FIXES WITHOUT ROOT CAUSE FIRST.
 ---
 
-# Systematic Debugging
+# Systematic Debugging for Django
 
 ## Core Principle
 
-**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.**
+**NO FIXES WITHOUT ROOT CAUSE FIRST**
 
-Never apply symptom-focused patches that mask underlying problems. Understand WHY something fails before attempting to fix it.
+Never apply patches that mask underlying problems. Understand WHY something fails before attempting to fix it.
 
-## The Four-Phase Framework
+## Four-Phase Framework
 
-### Phase 1: Root Cause Investigation
+### Phase 1: Reproduce and Investigate
 
 Before touching any code:
 
-1. **Read error messages thoroughly** - Every word matters
-2. **Reproduce the issue consistently** - If you can't reproduce it, you can't verify a fix
-3. **Examine recent changes** - What changed before this started failing?
-4. **Gather diagnostic evidence** - Logs, stack traces, state dumps
-5. **Trace data flow** - Follow the call chain to find where bad values originate
+1. **Write a failing test** - Captures the bug behavior
+2. **Read error messages thoroughly** - Every word matters
+3. **Examine recent changes** - `git diff`, `git log`
+4. **Trace data flow** - Follow the call chain to find where bad values originate
 
-**Root Cause Tracing Technique:**
+```python
+# Write a failing test first
+@pytest.mark.django_db
+def test_bug_reproduction():
+    """Reproduces issue #123."""
+    user = UserFactory()
+    response = Client().post("/profile/", {"bio": "New"})
+    assert response.status_code == 200  # Currently failing
 ```
-1. Observe the symptom - Where does the error manifest?
-2. Find immediate cause - Which code directly produces the error?
-3. Ask "What called this?" - Map the call chain upward
-4. Keep tracing up - Follow invalid data backward through the stack
-5. Find original trigger - Where did the problem actually start?
+
+### Phase 2: Isolate
+
+Narrow down the problem:
+
+```python
+# Add strategic logging
+import logging
+logger = logging.getLogger(__name__)
+
+def problematic_view(request):
+    logger.debug(f"Method: {request.method}")
+    logger.debug(f"POST: {request.POST}")
+    logger.debug(f"User: {request.user}")
+
+    form = MyForm(request.POST)
+    logger.debug(f"Valid: {form.is_valid()}")
+    logger.debug(f"Errors: {form.errors}")
 ```
 
-**Key principle:** Never fix problems solely where errors appear—always trace to the original trigger.
+### Phase 3: Identify Root Cause
 
-### Phase 2: Pattern Analysis
+- Read the full stack trace
+- Use debugger to inspect state
+- Check what assumptions are violated
 
-1. **Locate working examples** - Find similar code that works correctly
-2. **Compare implementations completely** - Don't just skim
-3. **Identify differences** - What's different between working and broken?
-4. **Understand dependencies** - What does this code depend on?
+### Phase 4: Fix and Verify
 
-### Phase 3: Hypothesis and Testing
+1. Implement fix at the root cause
+2. Run reproduction test (should pass)
+3. Run full test suite
+4. Verify manually if needed
 
-Apply the scientific method:
+## Django Debug Tools
 
-1. **Formulate ONE clear hypothesis** - "The error occurs because X"
-2. **Design minimal test** - Change ONE variable at a time
-3. **Predict the outcome** - What should happen if hypothesis is correct?
-4. **Run the test** - Execute and observe
-5. **Verify results** - Did it behave as predicted?
-6. **Iterate or proceed** - Refine hypothesis if wrong, implement if right
+### Django Debug Toolbar
 
-### Phase 4: Implementation
+```python
+# settings/dev.py
+INSTALLED_APPS += ["debug_toolbar"]
+MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+INTERNAL_IPS = ["127.0.0.1"]
+```
 
-1. **Create failing test case** - Captures the bug behavior
-2. **Implement single fix** - Address root cause, not symptoms
-3. **Verify test passes** - Confirms fix works
-4. **Run full test suite** - Ensure no regressions
-5. **If fix fails, STOP** - Re-evaluate hypothesis
+Check SQL panel for N+1 queries, slow queries > 10ms.
 
-**Critical rule:** If THREE or more fixes fail consecutively, STOP. This signals architectural problems requiring discussion, not more patches.
+### Python Debugger
 
-## Red Flags - Process Violations
+```python
+def problematic_view(request):
+    breakpoint()  # Execution stops here
 
-Stop immediately if you catch yourself thinking:
+    # Commands: n(ext), s(tep), c(ontinue), p var, q(uit)
+```
 
-- "Quick fix for now, investigate later"
-- "One more fix attempt" (after multiple failures)
+```bash
+# Drop into debugger on test failure
+uv run pytest --pdb -x
+```
+
+### Query Debugging
+
+```python
+# Log all SQL queries
+LOGGING = {
+    "loggers": {
+        "django.db.backends": {"level": "DEBUG", "handlers": ["console"]},
+    },
+}
+
+# Count queries in tests
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
+
+def test_no_n_plus_one():
+    with CaptureQueriesContext(connection) as ctx:
+        list(Post.objects.select_related("author"))
+    assert len(ctx) <= 2
+```
+
+## Common Django Issues
+
+### N+1 Queries
+
+```python
+# Problem
+for post in Post.objects.all():
+    print(post.author.email)  # Query per post!
+
+# Fix
+for post in Post.objects.select_related("author"):
+    print(post.author.email)  # Single query
+```
+
+### Form Not Saving
+
+```python
+# Check these:
+# 1. form.is_valid() returns True?
+# 2. form.save() called?
+# 3. If commit=False, did you call .save() on instance?
+
+def debug_form(request):
+    form = MyForm(request.POST)
+    print(f"Valid: {form.is_valid()}")
+    print(f"Errors: {form.errors}")
+```
+
+### CSRF 403 Errors
+
+```html
+<!-- Check: csrf_token in form -->
+<form method="post">
+    {% csrf_token %}
+</form>
+```
+
+### Migration Issues
+
+```bash
+uv run python manage.py showmigrations
+uv run python manage.py migrate app_name 0001 --fake
+```
+
+## Debugging Celery
+
+```python
+# Run synchronously for debugging
+my_task(arg)  # Direct call, not .delay()
+
+# Or set in settings
+CELERY_TASK_ALWAYS_EAGER = True
+```
+
+## Debugging HTMX
+
+```html
+<script>htmx.logAll();</script>
+```
+
+```python
+def view(request):
+    print(f"HTMX: {request.headers.get('HX-Request')}")
+```
+
+## Checklist
+
+Before claiming fixed:
+
+- [ ] Root cause identified
+- [ ] Reproduction test passes
+- [ ] Full test suite passes (`uv run pytest`)
+- [ ] No type errors (`uv run pyright`)
+- [ ] No lint errors (`uv run ruff check .`)
+
+## Red Flags
+
+Stop if you're thinking:
+- "Quick fix now, investigate later"
+- "One more attempt" (after 3+ failures)
 - "This should work" (without understanding why)
-- "Let me just try..." (without hypothesis)
-- "It works on my machine" (without investigating difference)
 
-## Warning Signs of Deeper Problems
-
-**Consecutive fixes revealing new problems in different areas** indicates architectural issues:
-
-- Stop patching
-- Document what you've found
-- Discuss with team before proceeding
-- Consider if the design needs rethinking
-
-## Common Debugging Scenarios
-
-### Test Failures
-
-```
-1. Read the FULL error message and stack trace
-2. Identify which assertion failed and why
-3. Check test setup - is the test environment correct?
-4. Check test data - are mocks/fixtures correct?
-5. Trace to the source of unexpected value
-```
-
-### Runtime Errors
-
-```
-1. Capture the full stack trace
-2. Identify the line that throws
-3. Check what values are undefined/null
-4. Trace backward to find where bad value originated
-5. Add validation at the source
-```
-
-### "It worked before"
-
-```
-1. Use git bisect to find the breaking commit
-2. Compare the change with previous working version
-3. Identify what assumption changed
-4. Fix at the source of the assumption violation
-```
-
-### Intermittent Failures
-
-```
-1. Look for race conditions
-2. Check for shared mutable state
-3. Examine async operation ordering
-4. Look for timing dependencies
-5. Add deterministic waits or proper synchronization
-```
-
-## Debugging Checklist
-
-Before claiming a bug is fixed:
-
-- [ ] Root cause identified and documented
-- [ ] Hypothesis formed and tested
-- [ ] Fix addresses root cause, not symptoms
-- [ ] Failing test created that reproduces bug
-- [ ] Test now passes with fix
-- [ ] Full test suite passes
-- [ ] No "quick fix" rationalization used
-- [ ] Fix is minimal and focused
-
-## Success Metrics
-
-Systematic debugging achieves ~95% first-time fix rate vs ~40% with ad-hoc approaches.
-
-Signs you're doing it right:
-- Fixes don't create new bugs
-- You can explain WHY the bug occurred
-- Similar bugs don't recur
-- Code is better after the fix, not just "working"
+Three consecutive failed fixes = architectural problem. Stop and discuss.
 
 ## Integration with Other Skills
 
-- **testing-patterns**: Create test that reproduces the bug before fixing
+- **pytest-django-patterns**: Write reproduction tests
+- **django-models**: Debug QuerySet issues
+- **celery-patterns**: Debug async task failures
+- **htmx-alpine-patterns**: Debug HTMX requests

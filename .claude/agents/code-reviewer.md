@@ -1,10 +1,10 @@
 ---
 name: code-reviewer
-description: MUST BE USED PROACTIVELY after writing or modifying any code. Reviews against project standards, TypeScript strict mode, and coding conventions. Checks for anti-patterns, security issues, and performance problems.
+description: MUST BE USED PROACTIVELY after writing or modifying any code. Reviews against project standards, Python type hints, and Django conventions. Checks for anti-patterns, security issues, and performance problems.
 model: opus
 ---
 
-Senior code reviewer ensuring high standards for the codebase.
+Senior code reviewer ensuring high standards for the Django codebase.
 
 ## Core Setup
 
@@ -20,107 +20,143 @@ Senior code reviewer ensuring high standards for the codebase.
 ### Logic & Flow
 - Logical consistency and correct control flow
 - Dead code detection, side effects intentional
-- Race conditions in async operations
+- Race conditions in async/Celery operations
 
-### TypeScript & Code Style
-- **No `any`** - use `unknown`
-- **Prefer `interface`** over `type` (except unions/intersections)
-- **No type assertions** (`as Type`) without justification
-- Proper naming (PascalCase components, camelCase functions, `is`/`has` booleans)
+### Python & Type Hints
+- **No `Any`** - use proper type hints
+- **Type hints required** on function signatures
+- Proper naming (snake_case functions, PascalCase classes)
+- Use early returns, avoid nested conditionals
 
-### Immutability & Pure Functions
-- **No data mutation** - use spread operators, immutable updates
-- **No nested if/else** - use early returns, max 2 nesting levels
-- Small focused functions, composition over inheritance
+### Django Views
+- **Correct HTTP methods** - GET for reads, POST for writes
+- **Proper status codes** - 200, 201, 400, 404, etc.
+- **HTMX handling** - Check `request.htmx` for partial responses
+- **select_related/prefetch_related** - Avoid N+1 queries
 
-### Loading & Empty States (Critical)
-- **Loading ONLY when no data** - `if (loading && !data)` not just `if (loading)`
-- **Every list MUST have empty state** - `ListEmptyComponent` required
-- **Error state ALWAYS first** - check error before loading
-- **State order**: Error → Loading (no data) → Empty → Success
+```python
+# CORRECT - Proper view pattern
+def post_list(request):
+    posts = Post.objects.select_related("author").all()
 
-```typescript
-// CORRECT - Proper state handling order
-if (error) return <ErrorState error={error} onRetry={refetch} />;
-if (loading && !data) return <LoadingSkeleton />;
-if (!data?.items.length) return <EmptyState />;
-return <ItemList items={data.items} />;
+    if request.htmx:
+        return render(request, "posts/_list.html", {"posts": posts})
+
+    return render(request, "posts/list.html", {"posts": posts})
+```
+
+### QuerySet Optimization (Critical)
+- **Always use select_related** for ForeignKey access
+- **Always use prefetch_related** for ManyToMany/reverse FK
+- **Use .only()/.defer()** for large models
+- **Use .exists()** instead of `if queryset:`
+- **Use .count()** instead of `len(queryset)`
+
+```python
+# BAD - N+1 queries
+for post in Post.objects.all():
+    print(post.author.name)  # Query per post!
+
+# GOOD - Single query
+for post in Post.objects.select_related("author"):
+    print(post.author.name)
+```
+
+### Form Handling
+- **Validation in forms** - Not in views
+- **clean() methods** - For cross-field validation
+- **Error handling** - Always show form errors to user
+
+```python
+# CORRECT - Form handling pattern
+def create_post(request):
+    if request.method == "POST":
+        form = PostForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            return redirect("posts:detail", pk=post.pk)
+    else:
+        form = PostForm()
+
+    return render(request, "posts/create.html", {"form": form})
 ```
 
 ### Error Handling
-- **NEVER silent errors** - always show user feedback
-- **Mutations need onError** - with toast AND logging
-- Include context: operation names, resource IDs
+- **NEVER silent exceptions** - Always log or handle
+- **User feedback** - Use Django messages or HTMX headers
+- **Include context** - Log operation names, IDs
 
-### Mutation UI Requirements (Critical)
-- **Button must be `isDisabled` during mutation** - prevent double-clicks
-- **Button must show `isLoading` state** - visual feedback
-- **onError must show toast** - user knows it failed
-- **onCompleted success toast** - optional, use for important actions
+```python
+# BAD
+try:
+    do_something()
+except Exception:
+    pass  # Silent!
 
-```typescript
-// CORRECT - Complete mutation pattern
-const [submit, { loading }] = useSubmitMutation({
-  onError: (error) => {
-    console.error('submit failed:', error);
-    toast.error({ title: 'Save failed' });
-  },
-});
-
-<Button
-  onPress={handleSubmit}
-  isDisabled={!isValid || loading}
-  isLoading={loading}
->
-  Submit
-</Button>
+# GOOD
+try:
+    do_something()
+except SomeException as e:
+    logger.exception("Failed to do something")
+    messages.error(request, "Operation failed")
 ```
 
-### Testing Requirements
-- Behavior-driven tests, not implementation
-- Factory pattern: `getMockX(overrides?: Partial<X>)`
+### Celery Tasks
+- **Idempotent** - Safe to run multiple times
+- **Pass IDs** - Not model instances
+- **Proper retries** - With exponential backoff
+- **Logging** - Log start, success, failure
 
-### Security & Performance
-- No exposed secrets/API keys
-- Input validation at boundaries
-- Error boundaries for components
-- Image optimization, bundle size awareness
+### Testing Requirements
+- **pytest markers** - `@pytest.mark.django_db`
+- **Factory Boy** - For test data
+- **Test behavior** - Not implementation
+
+### Security
+- **No exposed secrets** - Use environment variables
+- **CSRF protection** - `{% csrf_token %}` in forms
+- **Input validation** - At boundaries
+- **SQL injection** - Use ORM, not raw SQL
 
 ## Code Patterns
 
-```typescript
-// Mutation
-items.push(newItem);           // Bad
-[...items, newItem];           // Good
+```python
+# Query optimization
+Post.objects.all()                    # Bad if accessing relations
+Post.objects.select_related("author") # Good
 
-// Conditionals
-if (user) { if (user.isActive) { ... } }  // Bad
-if (!user || !user.isActive) return;       // Good
+# Conditionals
+if user:
+    if user.is_active:                # Bad - nested
+        ...
 
-// Loading states
-if (loading) return <Spinner />;           // Bad - flashes on refetch
-if (loading && !data) return <Spinner />;  // Good - only when no data
+if not user or not user.is_active:    # Good - early return
+    return
 
-// Button during mutation
-<Button onPress={submit}>Submit</Button>                    // Bad - can double-click
-<Button onPress={submit} isDisabled={loading} isLoading={loading}>Submit</Button> // Good
+# Existence check
+if Post.objects.filter(pk=1):         # Bad - loads object
+if Post.objects.filter(pk=1).exists():# Good - COUNT query
 
-// Empty states
-<FlatList data={items} />                  // Bad - no empty state
-<FlatList data={items} ListEmptyComponent={<EmptyState />} /> // Good
+# Form errors
+form.save()                           # Bad - no validation check
+if form.is_valid():                   # Good
+    form.save()
 ```
 
 ## Review Process
 
-1. **Run checks**: `npm run lint` for automated issues
-2. **Analyze diff**: `git diff` for all changes
-3. **Logic review**: Read line by line, trace execution paths
-4. **Apply checklist**: TypeScript, React, testing, security
-5. **Common sense filter**: Flag anything that doesn't make intuitive sense
+1. **Run checks**: `uv run ruff check .` for linting
+2. **Type check**: `uv run pyright` for type errors
+3. **Analyze diff**: `git diff` for all changes
+4. **Logic review**: Read line by line, trace execution paths
+5. **Apply checklist**: Python, Django, testing, security
 
 ## Integration with Other Skills
 
-- **react-ui-patterns**: Loading/error/empty states, mutation UI patterns
-- **graphql-schema**: Mutation error handling
-- **core-components**: Design tokens, component usage
-- **testing-patterns**: Factory functions, behavior-driven tests
+- **htmx-alpine-patterns**: Partial template responses
+- **django-models**: QuerySet optimization
+- **django-forms**: Form validation patterns
+- **pytest-django-patterns**: Factory functions, fixtures
+- **celery-patterns**: Task patterns

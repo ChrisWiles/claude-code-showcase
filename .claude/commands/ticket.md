@@ -1,6 +1,6 @@
 ---
 description: Work on a JIRA/Linear ticket end-to-end
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(npm:*), mcp__jira__*, mcp__github__*, mcp__linear__*
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(uv:*), Bash(python:*), mcp__jira__*, mcp__github__*, mcp__linear__*
 ---
 
 # Ticket Workflow
@@ -44,21 +44,31 @@ git checkout -b {initials}/{ticket-id}-{brief-description}
 - Write tests first (TDD)
 - Make incremental commits
 
-### 5. Update the Ticket
+### 5. Run Quality Checks
+
+Before committing:
+```bash
+uv run ruff check .
+uv run ruff format .
+uv run pyright
+uv run pytest
+```
+
+### 6. Update the Ticket
 
 As you work:
 - Add comments with progress updates
 - Update status (In Progress → In Review)
 - Log any blockers or questions
 
-### 6. Create PR and Link
+### 7. Create PR and Link
 
 When ready:
 - Create PR with `gh pr create`
 - Link the PR to the ticket
 - Add ticket ID to PR title: `feat(PROJ-123): description`
 
-### 7. If You Find a Bug
+### 8. If You Find a Bug
 
 If you discover an unrelated bug while working:
 1. Create a new ticket with details
@@ -81,16 +91,21 @@ Claude:
    - [ ] Show loading state during upload
 
 2. Searching codebase for profile-related code...
-   Found: src/screens/Profile/ProfileScreen.tsx
-   Found: src/components/Avatar/Avatar.tsx
+   Found: apps/users/views.py
+   Found: templates/users/profile.html
 
-3. Creating branch: cw/PROJ-123-avatar-upload
+3. Creating branch: jd/PROJ-123-avatar-upload
 
 4. [Implements feature with TDD approach]
 
-5. Updating JIRA status to "In Review"...
+5. Running quality checks...
+   - ruff check: passed
+   - pyright: passed
+   - pytest: 15 tests passed
+
+6. Updating JIRA status to "In Review"...
    Adding comment: "Implementation complete, PR ready for review"
 
-6. Creating PR and linking to PROJ-123...
+7. Creating PR and linking to PROJ-123...
    PR #456 created: feat(PROJ-123): add avatar upload to profile
 ```

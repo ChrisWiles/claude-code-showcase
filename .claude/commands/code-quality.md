@@ -1,6 +1,6 @@
 ---
 description: Run code quality checks on a directory
-allowed-tools: Read, Glob, Grep, Bash(npm:*), Bash(npx:*)
+allowed-tools: Read, Glob, Grep, Bash(uv:*)
 ---
 
 # Code Quality Review
@@ -10,22 +10,26 @@ Review code quality in: $ARGUMENTS
 ## Instructions
 
 1. **Identify files to review**:
-   - Find all `.ts` and `.tsx` files in the directory
-   - Exclude test files and generated files
+   - Find all `.py` files in the directory
+   - Exclude migrations, `__pycache__`, and generated files
 
 2. **Run automated checks**:
    ```bash
-   npm run lint -- $ARGUMENTS
-   npm run typecheck
+   uv run ruff check $ARGUMENTS
+   uv run ruff format --check $ARGUMENTS
+   uv run pyright $ARGUMENTS
+   uv run pytest $ARGUMENTS -v
    ```
 
 3. **Manual review checklist**:
-   - [ ] No TypeScript `any` types
-   - [ ] Proper error handling
-   - [ ] Loading states handled correctly
-   - [ ] Empty states for lists
-   - [ ] Mutations have onError handlers
-   - [ ] Buttons disabled during async operations
+   - [ ] No `Any` types without justification
+   - [ ] Proper error handling (no silent exceptions)
+   - [ ] N+1 queries avoided (select_related/prefetch_related)
+   - [ ] Forms have proper validation
+   - [ ] Views return correct HTTP status codes
+   - [ ] HTMX partials handle HX-Request header
+   - [ ] Celery tasks are idempotent
+   - [ ] Tests use factories, not raw object creation
 
 4. **Report findings** organized by severity:
    - Critical (must fix)

@@ -16,164 +16,154 @@
     "contextPattern": 2
   },
   "directoryMappings": {
-    "src/components/core": "core-components",
-    "src/components": "core-components",
-    "src/screens": "navigation-architecture",
-    "src/navigation": "navigation-architecture",
-    "src/hooks": "react-ui-patterns",
-    "src/graphql": "graphql-schema",
-    "src/localization": "i18n-translations",
-    "src/state": "state-management",
-    "src/contexts": "state-management",
-    ".maestro": "maestro-e2e",
-    ".github/workflows": "github-actions",
-    "src/utils/sentry": "analytics-tracking",
-    "src/datadog": "analytics-tracking"
+    "apps/": "django-models",
+    "models/": "django-models",
+    "templates/": "django-templates",
+    "tests/": "pytest-django-patterns",
+    "api/": "drf-patterns",
+    "serializers/": "drf-patterns",
+    "tasks/": "celery-patterns",
+    "consumers/": "django-channels",
+    "forms/": "django-forms"
   },
   "skills": {
-    "storybook": {
-      "description": "Storybook story creation patterns",
-      "priority": 8,
-      "triggers": {
-        "keywords": ["storybook", "stories", "story"],
-        "keywordPatterns": ["\\bstory\\b", "\\.stories\\b"],
-        "pathPatterns": ["**/*.stories.tsx", "**/stories/**"],
-        "intentPatterns": [
-          "(?:create|add|write|build|make).*(?:stor(?:y|ies))",
-          "(?:stor(?:y|ies)).*(?:for|of)"
-        ],
-        "contentPatterns": ["ComponentMeta", "StoryObj", "@storybook"]
-      },
-      "relatedSkills": ["core-components"]
-    },
-    "testing-patterns": {
-      "description": "Jest testing patterns and TDD workflow",
+    "pytest-django-patterns": {
+      "description": "pytest-django testing patterns and TDD workflow",
       "priority": 9,
       "triggers": {
-        "keywords": ["test", "jest", "spec", "tdd", "mock", "factory"],
-        "keywordPatterns": ["\\btest(?:s|ing)?\\b", "\\bspec\\b", "unit test"],
-        "pathPatterns": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/test-utils/**", "**/__mocks__/**"],
+        "keywords": ["test", "pytest", "fixture", "factory", "mock", "tdd"],
+        "keywordPatterns": ["\\btest(?:s|ing)?\\b", "\\bspec\\b", "\\bfixture\\b"],
+        "pathPatterns": ["**/test_*.py", "**/*_test.py", "**/conftest.py", "**/factories.py"],
         "intentPatterns": [
-          "(?:write|add|create|fix).*(?:test|spec)",
-          "(?:test|spec).*(?:for|of|the)",
+          "(?:write|add|create|fix).*(?:test)",
+          "(?:test).*(?:for|the)",
           "(?:red.green.refactor|tdd)"
         ],
-        "contentPatterns": ["describe\\(", "it\\(", "expect\\(", "jest\\.mock", "getMock"]
+        "contentPatterns": ["@pytest", "def test_", "Factory", "pytest.mark"]
       },
-      "excludePatterns": ["e2e", "maestro", "end-to-end"]
+      "excludePatterns": ["e2e", "playwright", "selenium"]
     },
-    "formik-patterns": {
-      "description": "Formik form handling with validation",
+    "django-forms": {
+      "description": "Django form handling with validation",
       "priority": 7,
       "triggers": {
-        "keywords": ["form", "formik", "validation", "yup", "input field"],
+        "keywords": ["form", "modelform", "validation", "clean", "widget"],
         "keywordPatterns": ["\\bform(?:s)?\\b", "Form\\b", "\\bvalidat(?:e|ion)\\b"],
-        "pathPatterns": ["**/*Form.tsx", "**/*Form/**", "**/forms/**"],
+        "pathPatterns": ["**/forms.py", "**/forms/*.py"],
         "intentPatterns": [
           "(?:create|build|add).*(?:form)",
           "(?:form).*(?:validation|submit|field)",
           "(?:validat(?:e|ion)).*(?:schema|rule)"
         ],
-        "contentPatterns": ["useFormik", "Formik", "FormikProvider", "yup\\."]
+        "contentPatterns": ["forms.Form", "ModelForm", "clean_", "is_valid"]
       },
       "excludePatterns": ["format", "transform", "platform"]
     },
-    "graphql-schema": {
-      "description": "GraphQL queries, mutations, and code generation",
+    "drf-patterns": {
+      "description": "Django REST Framework serializers and viewsets",
       "priority": 8,
       "triggers": {
-        "keywords": ["graphql", "query", "mutation", "gql", "apollo", "fragment"],
-        "keywordPatterns": ["\\bgql\\b", "\\bquery\\b", "\\bmutation\\b", "graphql"],
-        "pathPatterns": ["**/*.gql", "**/graphql/**", "**/*.generated.ts"],
+        "keywords": ["api", "serializer", "viewset", "drf", "rest", "endpoint"],
+        "keywordPatterns": ["\\bapi\\b", "\\bserializer\\b", "\\bviewset\\b", "rest.?framework"],
+        "pathPatterns": ["**/api/**", "**/serializers.py", "**/viewsets.py", "**/api/*.py"],
         "intentPatterns": [
-          "(?:create|add|write).*(?:query|mutation|fragment)",
-          "(?:fetch|get|load).*(?:data|from api)",
-          "(?:graphql).*(?:hook|type)"
+          "(?:create|add|write).*(?:api|endpoint|serializer)",
+          "(?:rest|api).*(?:endpoint|view)"
         ],
-        "contentPatterns": ["gql`", "useQuery", "useMutation", "useLazyQuery"]
-      },
-      "relatedSkills": ["react-ui-patterns"]
-    },
-    "navigation-architecture": {
-      "description": "React Navigation patterns and deep linking",
-      "priority": 7,
-      "triggers": {
-        "keywords": ["navigation", "navigate", "screen", "route", "stack", "tab", "drawer", "deep link"],
-        "keywordPatterns": ["\\bscreen\\b", "\\bnavigate\\b", "\\broute\\b"],
-        "pathPatterns": ["**/navigation/**", "**/screens/**", "**/*Screen.tsx", "**/*Stack.tsx"],
-        "intentPatterns": [
-          "(?:add|create|new).*(?:screen)",
-          "(?:navigate|go).*(?:to|back)",
-          "(?:screen).*(?:param|prop)"
-        ],
-        "contentPatterns": ["useNavigation", "navigation\\.navigate", "createStackNavigator", "RootStackParamList"]
+        "contentPatterns": ["rest_framework", "serializers.", "APIView", "ViewSet"]
       }
     },
-    "i18n-translations": {
-      "description": "Internationalization and translation patterns",
+    "htmx-alpine-patterns": {
+      "description": "HTMX patterns for dynamic Django templates",
+      "priority": 7,
+      "triggers": {
+        "keywords": ["htmx", "hx-", "partial", "ajax", "dynamic"],
+        "keywordPatterns": ["\\bhtmx\\b", "\\bhx-\\w+\\b", "\\bpartial\\b"],
+        "pathPatterns": ["**/templates/**/_*.html", "**/partials/**"],
+        "intentPatterns": [
+          "(?:add|create).*(?:htmx|dynamic|ajax)",
+          "(?:htmx).*(?:request|swap|trigger)"
+        ],
+        "contentPatterns": ["hx-get", "hx-post", "hx-target", "hx-swap", "HX-Request"]
+      }
+    },
+    "django-templates": {
+      "description": "Django template inheritance and patterns",
       "priority": 6,
       "triggers": {
-        "keywords": ["translation", "i18n", "localization", "translate", "t("],
-        "keywordPatterns": ["\\bt\\(", "\\bi18n\\b", "translat"],
-        "pathPatterns": ["**/localization/**", "**/en/**/*.json", "**/i18n/**"],
+        "keywords": ["template", "html", "extends", "block", "include"],
+        "keywordPatterns": ["\\btemplate\\b", "\\bhtml\\b"],
+        "pathPatterns": ["**/templates/**/*.html"],
         "intentPatterns": [
-          "(?:add|create).*(?:translation|text)",
-          "(?:translat).*(?:key|string)"
+          "(?:create|add).*(?:template|page)",
+          "(?:template).*(?:tag|filter)"
         ],
-        "contentPatterns": ["useTranslation", "t\\(", "i18next"]
+        "contentPatterns": ["{% extends", "{% block", "{% include", "{% for"]
       }
     },
-    "core-components": {
-      "description": "Core component library and design system",
+    "celery-patterns": {
+      "description": "Celery task patterns and async processing",
       "priority": 7,
       "triggers": {
-        "keywords": ["component", "ui", "button", "text", "box", "hstack", "vstack", "token"],
-        "keywordPatterns": ["\\bcomponent\\b", "\\$[a-z]+\\d*"],
-        "pathPatterns": ["**/components/core/**", "**/components/**/*.tsx"],
+        "keywords": ["celery", "task", "async", "background", "queue", "worker"],
+        "keywordPatterns": ["\\bcelery\\b", "\\btask\\b", "\\basync\\b", "\\.delay\\("],
+        "pathPatterns": ["**/tasks.py", "**/tasks/*.py", "**/celery.py"],
         "intentPatterns": [
-          "(?:create|build|add).*(?:component)",
-          "(?:style|design).*(?:component|ui)"
+          "(?:create|add).*(?:task|background)",
+          "(?:async|background).*(?:job|process)"
         ],
-        "contentPatterns": ["from 'components/core", "Box", "HStack", "VStack", "Text"]
-      },
-      "excludePatterns": ["storybook", "test"]
+        "contentPatterns": ["@shared_task", "@celery", ".delay(", ".apply_async"]
+      }
+    },
+    "django-channels": {
+      "description": "Django Channels WebSocket patterns",
+      "priority": 6,
+      "triggers": {
+        "keywords": ["websocket", "channels", "consumer", "realtime", "ws"],
+        "keywordPatterns": ["\\bwebsocket\\b", "\\bchannel\\b", "\\bconsumer\\b"],
+        "pathPatterns": ["**/consumers.py", "**/routing.py", "**/consumers/*.py"],
+        "intentPatterns": [
+          "(?:add|create).*(?:websocket|realtime)",
+          "(?:websocket|channel).*(?:connection|message)"
+        ],
+        "contentPatterns": ["WebsocketConsumer", "AsyncWebsocketConsumer", "channel_layer"]
+      }
+    },
+    "django-models": {
+      "description": "Django model design and QuerySet optimization",
+      "priority": 7,
+      "triggers": {
+        "keywords": ["model", "queryset", "migration", "orm", "database", "query"],
+        "keywordPatterns": ["\\bmodel\\b", "\\bqueryset\\b", "\\bmigration\\b"],
+        "pathPatterns": ["**/models.py", "**/models/*.py", "**/migrations/*.py"],
+        "intentPatterns": [
+          "(?:create|add|design).*(?:model)",
+          "(?:optimize|fix).*(?:query|n\\+1)"
+        ],
+        "contentPatterns": ["models.Model", "models.CharField", "objects.filter", "select_related"]
+      }
     },
     "systematic-debugging": {
       "description": "Four-phase debugging with root cause analysis",
       "priority": 9,
       "triggers": {
-        "keywords": ["bug", "debug", "fix", "error", "issue", "broken", "crash", "failing"],
+        "keywords": ["bug", "debug", "fix", "error", "issue", "broken", "failing"],
         "keywordPatterns": ["\\bbug\\b", "\\bfix\\b", "\\berror\\b", "\\bissue\\b", "doesn't work", "not working"],
         "intentPatterns": [
           "(?:fix|debug|resolve|investigate).*(?:bug|error|issue|problem)",
-          "(?:why).*(?:not working|broken|failing|crash)",
+          "(?:why).*(?:not working|broken|failing)",
           "(?:something).*(?:wrong|broken)"
         ]
       },
       "excludePatterns": ["fix typo", "fix formatting", "fix lint"]
     },
-    "state-management": {
-      "description": "Redux Toolkit, Jotai, Apollo Client state patterns",
-      "priority": 6,
-      "triggers": {
-        "keywords": ["state", "redux", "jotai", "atom", "store", "slice", "context", "provider"],
-        "keywordPatterns": ["\\bstate\\b", "\\bredux\\b", "\\batom\\b", "\\bstore\\b"],
-        "pathPatterns": ["**/state/**", "**/store/**", "**/contexts/**", "**/*Atom.ts", "**/*Slice.ts"],
-        "intentPatterns": [
-          "(?:manage|handle).*(?:state)",
-          "(?:create|add).*(?:atom|slice|context)"
-        ],
-        "contentPatterns": ["useAtom", "useSelector", "createSlice", "atom\\("]
-      },
-      "excludePatterns": ["state of", "current state", "error state"]
-    },
     "github-actions": {
       "description": "GitHub Actions CI/CD workflow patterns",
       "priority": 6,
       "triggers": {
-        "keywords": ["github action", "github workflow", "workflow", "ci/cd", "cicd", "pipeline", "ci", "cd"],
+        "keywords": ["github action", "workflow", "ci/cd", "pipeline", "ci"],
         "keywordPatterns": ["github.action", "ci/?cd", "\\bworkflow\\b"],
-        "pathPatterns": [".github/workflows/**", ".github/**/*.yml", ".github/**/*.yaml"],
+        "pathPatterns": [".github/workflows/**", ".github/**/*.yml"],
         "intentPatterns": [
           "(?:create|add|update).*(?:workflow|action|pipeline)",
           "(?:ci|cd).*(?:pipeline|workflow)"
@@ -181,142 +171,18 @@
         "contentPatterns": ["runs-on:", "uses:", "steps:"]
       }
     },
-    "analytics-tracking": {
-      "description": "Analytics with Amplitude, FullStory, Datadog, Sentry",
-      "priority": 5,
-      "triggers": {
-        "keywords": ["analytics", "tracking", "amplitude", "fullstory", "datadog", "event", "sentry"],
-        "keywordPatterns": ["\\btrack\\b", "\\bevent\\b", "\\blog\\b.*event"],
-        "pathPatterns": ["**/analytics/**", "**/tracking/**", "**/datadog/**", "**/sentry/**"],
-        "intentPatterns": [
-          "(?:track|log).*(?:event|action)",
-          "(?:add).*(?:analytics|tracking)"
-        ],
-        "contentPatterns": ["Analytics\\.log", "logEvent", "Sentry\\."]
-      }
-    },
-    "list-pagination": {
-      "description": "FlashList, pagination, infinite scroll patterns",
-      "priority": 5,
-      "triggers": {
-        "keywords": ["pagination", "flashlist", "infinite", "scroll", "list", "flatlist", "pull to refresh"],
-        "keywordPatterns": ["\\blist\\b", "paginate", "infinite.scroll"],
-        "pathPatterns": ["**/*List.tsx", "**/*List/**"],
-        "intentPatterns": [
-          "(?:add|implement).*(?:pagination|infinite)",
-          "(?:paginate).*(?:data|list)"
-        ],
-        "contentPatterns": ["FlashList", "onEndReached", "onRefresh", "ListRenderItem"]
-      },
-      "excludePatterns": ["todo list", "checklist", "list of"]
-    },
-    "modal-actionsheet": {
-      "description": "Modal and Actionsheet overlay patterns",
-      "priority": 5,
-      "triggers": {
-        "keywords": ["modal", "actionsheet", "bottom sheet", "overlay", "dialog", "popup", "sheet"],
-        "keywordPatterns": ["\\bmodal\\b", "\\bsheet\\b", "\\boverlay\\b", "\\bdialog\\b"],
-        "pathPatterns": ["**/*Modal.tsx", "**/*Sheet.tsx", "**/*Dialog.tsx", "**/modals/**"],
-        "intentPatterns": [
-          "(?:show|open|display).*(?:modal|sheet|dialog)",
-          "(?:create|add).*(?:modal|sheet|overlay)"
-        ],
-        "contentPatterns": ["Actionsheet", "Modal", "useDisclose"]
-      }
-    },
-    "maestro-e2e": {
-      "description": "Maestro end-to-end testing for React Native",
-      "priority": 6,
-      "triggers": {
-        "keywords": ["e2e", "maestro", "end-to-end", "integration test", "ui test"],
-        "keywordPatterns": ["\\be2e\\b", "\\bmaestro\\b", "end.to.end"],
-        "pathPatterns": [".maestro/**", ".maestro/**/*.yaml", "**/e2e/**"],
-        "intentPatterns": [
-          "(?:write|add|create).*(?:e2e|maestro|integration)",
-          "(?:test).*(?:flow|journey|scenario)"
-        ],
-        "contentPatterns": ["appId:", "- tap", "- assertVisible"]
-      }
-    },
-    "react-ui-patterns": {
-      "description": "React patterns, hooks, loading states, error handling",
-      "priority": 6,
-      "triggers": {
-        "keywords": ["react", "hook", "useeffect", "usestate", "usememo", "useref", "loading", "suspense"],
-        "keywordPatterns": ["\\buse[A-Z]\\w+\\b", "\\bhook\\b"],
-        "pathPatterns": ["**/hooks/**", "**/use*.ts", "**/use*.tsx"],
-        "intentPatterns": [
-          "(?:create|write).*(?:hook|custom hook)",
-          "(?:handle).*(?:loading|error|async)"
-        ],
-        "contentPatterns": ["useState", "useEffect", "useCallback", "useMemo"]
-      },
-      "excludePatterns": ["test", "jest"]
-    },
-    "receiving-code-review": {
-      "description": "Handle code review feedback with rigor",
-      "priority": 4,
-      "triggers": {
-        "keywords": ["code review", "pr feedback", "review comment", "pr comment", "reviewer"],
-        "keywordPatterns": ["code.review", "pr.feedback", "review.comment"],
-        "intentPatterns": [
-          "(?:respond|address|handle).*(?:review|feedback|comment)",
-          "(?:reviewer).*(?:said|suggested|asked)"
-        ],
-        "contextPatterns": ["from the reviewer", "in the pr", "review feedback"]
-      }
-    },
     "documentation": {
-      "description": "Documentation standards and TSDoc",
+      "description": "Documentation and docstrings",
       "priority": 3,
       "triggers": {
-        "keywords": ["documentation", "tsdoc", "jsdoc", "readme", "docs"],
+        "keywords": ["documentation", "docstring", "readme", "docs"],
         "keywordPatterns": ["\\bdoc(?:s|umentation)?\\b", "\\breadme\\b"],
         "pathPatterns": ["**/docs/**", "**/*.md", "**/README*"],
         "intentPatterns": [
           "(?:write|add|update).*(?:doc|documentation)",
-          "(?:document).*(?:function|component|api)"
+          "(?:document).*(?:function|class|api)"
         ]
       }
-    },
-    "typescript-conventions": {
-      "description": "TypeScript strict mode and conventions",
-      "priority": 5,
-      "triggers": {
-        "keywords": ["typescript", "type", "interface", "generic", "strict mode"],
-        "keywordPatterns": ["\\btype\\b", "\\binterface\\b", "\\bgeneric\\b"],
-        "pathPatterns": ["**/*.d.ts", "**/types/**", "**/types.ts"],
-        "intentPatterns": [
-          "(?:define|create).*(?:type|interface)",
-          "(?:type).*(?:error|issue)"
-        ],
-        "contentPatterns": ["interface ", "type ", ": unknown", "as const"]
-      },
-      "excludePatterns": ["issue type", "type of bug"]
-    },
-    "verification-before-completion": {
-      "description": "Evidence-based completion claims protocol",
-      "priority": 8,
-      "triggers": {
-        "keywords": ["verify", "check", "confirm", "done", "complete", "finished"],
-        "intentPatterns": [
-          "(?:is it|are we).*(?:done|complete|finished)",
-          "(?:verify|check|confirm).*(?:works|passes)"
-        ],
-        "contextPatterns": ["before claiming", "make sure", "double check"]
-      }
-    },
-    "defense-in-depth": {
-      "description": "Multi-layer validation for bug prevention",
-      "priority": 6,
-      "triggers": {
-        "keywords": ["validation", "guard", "defense", "layer", "prevent"],
-        "intentPatterns": [
-          "(?:prevent|avoid).*(?:bug|error|issue)",
-          "(?:add).*(?:validation|guard|check)"
-        ]
-      },
-      "relatedSkills": ["systematic-debugging"]
     }
   }
 }

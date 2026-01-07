@@ -1,43 +1,56 @@
 # Claude Code Skills
 
-This directory contains project-specific skills that provide Claude with domain knowledge and best practices for this codebase.
+This directory contains project-specific skills that provide Claude with domain knowledge and best practices for this Django codebase.
 
 ## Skills by Category
 
-### Code Quality & Patterns
+### Testing & Debugging
 | Skill | Description |
 |-------|-------------|
-| [testing-patterns](./testing-patterns/SKILL.md) | Jest testing, factory functions, mocking strategies, TDD workflow |
+| [pytest-django-patterns](./pytest-django-patterns/SKILL.md) | pytest-django, Factory Boy, fixtures, TDD workflow |
 | [systematic-debugging](./systematic-debugging/SKILL.md) | Four-phase debugging methodology, root cause analysis |
 
-### React & UI
+### Django Core
 | Skill | Description |
 |-------|-------------|
-| [react-ui-patterns](./react-ui-patterns/SKILL.md) | React patterns, loading states, error handling, GraphQL hooks |
-| [core-components](./core-components/SKILL.md) | Design system components, tokens, component library |
-| [formik-patterns](./formik-patterns/SKILL.md) | Form handling, validation, submission patterns |
+| [django-models](./django-models/SKILL.md) | Model design, QuerySet optimization, signals, migrations |
+| [django-forms](./django-forms/SKILL.md) | Form handling, validation, ModelForm patterns |
+| [django-templates](./django-templates/SKILL.md) | Template inheritance, tags, filters, partials |
 
-### Data & API
+### Frontend & UI
 | Skill | Description |
 |-------|-------------|
-| [graphql-schema](./graphql-schema/SKILL.md) | GraphQL queries, mutations, code generation |
+| [htmx-alpine-patterns](./htmx-alpine-patterns/SKILL.md) | HTMX attributes, partial templates, dynamic UI |
+
+### APIs & Background Tasks
+| Skill | Description |
+|-------|-------------|
+| [drf-patterns](./drf-patterns/SKILL.md) | Django REST Framework serializers, viewsets, permissions |
+| [celery-patterns](./celery-patterns/SKILL.md) | Celery tasks, retry strategies, periodic tasks |
+| [django-channels](./django-channels/SKILL.md) | WebSocket consumers, real-time features |
 
 ## Skill Combinations for Common Tasks
 
 ### Building a New Feature
-1. **react-ui-patterns** - Loading/error/empty states
-2. **graphql-schema** - Create queries/mutations
-3. **core-components** - UI implementation
-4. **testing-patterns** - Write tests (TDD)
+1. **django-models** - Design models
+2. **django-forms** - Create forms for user input
+3. **htmx-alpine-patterns** - Dynamic UI
+4. **django-templates** - Page templates
+5. **pytest-django-patterns** - Write tests (TDD)
 
-### Building a Form
-1. **formik-patterns** - Form structure and validation
-2. **graphql-schema** - Mutation for submission
-3. **react-ui-patterns** - Loading/error handling
+### Building an API Endpoint
+1. **drf-patterns** - Serializers and viewsets
+2. **django-models** - QuerySet optimization
+3. **pytest-django-patterns** - API tests
+
+### Building a Background Task
+1. **celery-patterns** - Task definition
+2. **django-models** - Database operations
+3. **pytest-django-patterns** - Task tests
 
 ### Debugging an Issue
 1. **systematic-debugging** - Root cause analysis
-2. **testing-patterns** - Write failing test first
+2. **pytest-django-patterns** - Write failing test first
 
 ## How Skills Work
 
