@@ -3,8 +3,8 @@
 ## Environment Variables
 
 - `INSIDE_CLAUDE_CODE`: "1" - Indicates code is running inside Claude Code
-- `BASH_DEFAULT_TIMEOUT_MS`: Default timeout for bash commands (7 minutes)
-- `BASH_MAX_TIMEOUT_MS`: Maximum timeout for bash commands
+- `BASH_DEFAULT_TIMEOUT_MS`: "420000" - Default timeout for bash commands (7 minutes)
+- `BASH_MAX_TIMEOUT_MS`: "420000" - Maximum timeout for bash commands (7 minutes)
 
 ## Hooks
 
@@ -13,6 +13,7 @@
 - **Skill Evaluation**: Analyzes prompts and suggests relevant skills
   - **Script**: `.claude/hooks/skill-eval.sh`
   - **Behavior**: Matches keywords, file paths, and patterns to suggest skills
+  - **Timeout**: 5s
 
 ### PreToolUse
 
@@ -22,25 +23,30 @@
 
 ### PostToolUse
 
-1. **Code Formatting**: Auto-format JS/TS files (30s timeout)
-   - **Triggers**: After editing `.js`, `.jsx`, `.ts`, `.tsx` files
-   - **Command**: `npx prettier --write` (or Biome)
-   - **Behavior**: Formats code, shows feedback if errors found
+1. **Ruff Formatting**: Auto-format Python files (30s timeout)
+   - **Triggers**: After editing `.py` files
+   - **Command**: `uv run ruff format`
+   - **Behavior**: Formats code, suppresses output on success, shows feedback on failure
 
-2. **NPM Install**: Auto-install after package.json changes (60s timeout)
-   - **Triggers**: After editing `package.json` files
-   - **Command**: `npm install`
-   - **Behavior**: Installs dependencies, fails edit if installation fails
+2. **Dependency Installation**: Auto-install after dependency changes (60s timeout)
+   - **Triggers**: After editing `pyproject.toml` or `requirements*.txt` files
+   - **Command**: `uv sync`
+   - **Behavior**: Installs dependencies, suppresses output on success, shows feedback on failure
 
 3. **Test Runner**: Run tests after test file changes (90s timeout)
-   - **Triggers**: After editing `.test.js`, `.test.jsx`, `.test.ts`, `.test.tsx` files
-   - **Command**: `npm test -- --findRelatedTests <file> --passWithNoTests`
-   - **Behavior**: Runs related tests, shows results, non-blocking
+   - **Triggers**: After editing `test_*.py`, `*_test.py`, or `*/tests/*.py` files
+   - **Command**: `uv run pytest <file> -x -q`
+   - **Behavior**: Runs tests in modified file, shows last 30 lines of output, non-blocking
 
-4. **TypeScript Check**: Type-check TS/TSX files (30s timeout)
-   - **Triggers**: After editing `.ts`, `.tsx` files
-   - **Command**: `npx tsc --noEmit`
-   - **Behavior**: Shows first errors only, non-blocking
+4. **Pyright Type Check**: Type-check Python files (30s timeout)
+   - **Triggers**: After editing `.py` files
+   - **Command**: `uv run pyright`
+   - **Behavior**: Shows first 20 lines of errors only, non-blocking, exit 0
+
+5. **Ruff Linting**: Lint Python files (30s timeout)
+   - **Triggers**: After editing `.py` files
+   - **Command**: `uv run ruff check`
+   - **Behavior**: Shows first 20 lines of issues only, non-blocking, exit 0
 
 ## Hook Response Format
 
