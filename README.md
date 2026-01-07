@@ -401,13 +401,19 @@ Claude:
 ```
 
 **Databases:**
+Take a look at [postgres-mcp](https://github.com/crystaldba/postgres-mcp).
 ```json
 {
   "postgres": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@anthropic/mcp-postgres"],
-    "env": { "DATABASE_URL": "${DATABASE_URL}" }
+    "command": "uv",
+    "args": [
+      "run",
+      "postgres-mcp",
+      "--access-mode=unrestricted"
+    ],
+    "env": {
+      "DATABASE_URI": "${DATABASE_URL}"
+    }
   }
 }
 ```
