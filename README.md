@@ -503,6 +503,7 @@ For advanced setups, create `.lsp.json`:
 ```
 
 #### Troubleshooting
+Note: According to this issue, all LSP plugins are not working right now: https://github.com/anthropics/claude-code/issues/14803. But the pre-release of v2.1.0 fixed it and you can try it with `npx @anthropic-ai/claude-code@2.1.0`.
 
 If LSP isn't working:
 
