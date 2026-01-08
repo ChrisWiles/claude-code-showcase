@@ -4,8 +4,10 @@ description: Formik form handling with validation patterns. Use when building fo
 ---
 
 # Formik Patterns
+# Formik 模式
 
 ## Basic Form Setup
+## 基本表單設定
 
 ```tsx
 import { useFormik } from 'formik';
@@ -62,18 +64,22 @@ const LoginForm = () => {
 ```
 
 ## Validation Schemas
+## 驗證模式
 
 ### Common Patterns
+### 常見模式
 
 ```typescript
 import * as yup from 'yup';
 
 // Email
+// 電子郵件
 email: yup.string()
   .email('Invalid email address')
   .required('Email is required')
 
 // Password with requirements
+// 具有要求的密碼
 password: yup.string()
   .min(8, 'Must be at least 8 characters')
   .matches(/[a-z]/, 'Must contain lowercase letter')
@@ -82,33 +88,39 @@ password: yup.string()
   .required('Password is required')
 
 // Confirm password
+// 確認密碼
 confirmPassword: yup.string()
   .oneOf([yup.ref('password')], 'Passwords must match')
   .required('Please confirm password')
 
 // Phone number
+// 電話號碼
 phone: yup.string()
   .matches(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number')
   .required('Phone is required')
 
 // Optional field with validation when present
+// 存在時需驗證的選填欄位
 website: yup.string()
   .url('Must be a valid URL')
   .nullable()
 
 // Number with range
+// 具有範圍的數字
 quantity: yup.number()
   .min(1, 'Minimum 1')
   .max(100, 'Maximum 100')
   .required('Quantity required')
 
 // Array with minimum items
+// 具有最小項目數的陣列
 tags: yup.array()
   .of(yup.string())
   .min(1, 'Select at least one tag')
 ```
 
 ### Conditional Validation
+### 條件驗證
 
 ```typescript
 const schema = yup.object({
@@ -122,8 +134,10 @@ const schema = yup.object({
 ```
 
 ## Form Field Helpers
+## 表單欄位輔助函數
 
 ### Input Helper
+### 輸入輔助函數
 
 ```tsx
 const getFieldProps = (name: keyof typeof formik.values) => ({
@@ -134,10 +148,12 @@ const getFieldProps = (name: keyof typeof formik.values) => ({
 });
 
 // Usage
+// 使用方式
 <Input label="Email" {...getFieldProps('email')} />
 ```
 
 ### Select/Picker Helper
+### 選擇器輔助函數
 
 ```tsx
 <Select
@@ -150,6 +166,7 @@ const getFieldProps = (name: keyof typeof formik.values) => ({
 ```
 
 ## Form Submission with GraphQL
+## 使用 GraphQL 提交表單
 
 ```tsx
 const CreateItemForm = () => {
@@ -179,6 +196,7 @@ const CreateItemForm = () => {
   return (
     <VStack gap="$4">
       {/* Form fields */}
+      {/* 表單欄位 */}
       <Button
         onPress={formik.handleSubmit}
         isDisabled={!formik.isValid || formik.isSubmitting}
@@ -192,6 +210,7 @@ const CreateItemForm = () => {
 ```
 
 ## Edit Form with Initial Values
+## 具有初始值的編輯表單
 
 ```tsx
 const EditItemForm = ({ item }: { item: Item }) => {
@@ -209,6 +228,7 @@ const EditItemForm = ({ item }: { item: Item }) => {
       description: item.description ?? '',
     },
     enableReinitialize: true, // Update when item prop changes
+                              // 當 item prop 改變時更新
     validationSchema,
     onSubmit: async (values) => {
       await updateItem({
@@ -218,11 +238,13 @@ const EditItemForm = ({ item }: { item: Item }) => {
   });
 
   // Track if form has changes
+  // 追蹤表單是否有變更
   const hasChanges = formik.dirty;
 
   return (
     <VStack gap="$4">
       {/* Form fields */}
+      {/* 表單欄位 */}
       <Button
         onPress={formik.handleSubmit}
         isDisabled={!hasChanges || !formik.isValid || formik.isSubmitting}
@@ -236,26 +258,41 @@ const EditItemForm = ({ item }: { item: Item }) => {
 ```
 
 ## Form State Helpers
+## 表單狀態輔助函數
 
 ```tsx
 const {
   values,          // Current form values
+                   // 目前表單值
   errors,          // Validation errors
+                   // 驗證錯誤
   touched,         // Fields that have been touched
+                   // 已觸碰的欄位
   isValid,         // Form passes validation
+                   // 表單通過驗證
   isSubmitting,    // Submit in progress
+                   // 提交進行中
   dirty,           // Values differ from initial
+                   // 值與初始值不同
   handleSubmit,    // Submit handler
+                   // 提交處理器
   handleChange,    // Change handler
+                   // 變更處理器
   handleBlur,      // Blur handler
+                   // 失焦處理器
   setFieldValue,   // Set single field
+                   // 設定單一欄位
   setFieldTouched, // Mark field touched
+                   // 標記欄位已觸碰
   resetForm,       // Reset to initial values
+                   // 重設為初始值
   setSubmitting,   // Control submitting state
+                   // 控制提交狀態
 } = formik;
 ```
 
 ## Multi-Step Forms
+## 多步驟表單
 
 ```tsx
 const MultiStepForm = () => {
@@ -264,12 +301,15 @@ const MultiStepForm = () => {
   const formik = useFormik({
     initialValues: {
       // Step 1
+      // 步驟 1
       name: '',
       email: '',
       // Step 2
+      // 步驟 2
       address: '',
       city: '',
       // Step 3
+      // 步驟 3
       cardNumber: '',
     },
     validationSchema: stepSchemas[step],
@@ -308,15 +348,18 @@ const MultiStepForm = () => {
 ```
 
 ## Anti-Patterns
+## 反模式
 
 ```tsx
 // WRONG - Not showing validation errors
+// 錯誤 - 不顯示驗證錯誤
 <Input
   value={formik.values.email}
   onChangeText={formik.handleChange('email')}
 />
 
 // CORRECT - Show errors when touched
+// 正確 - 觸碰時顯示錯誤
 <Input
   value={formik.values.email}
   onChangeText={formik.handleChange('email')}
@@ -326,9 +369,11 @@ const MultiStepForm = () => {
 
 
 // WRONG - Submit button always enabled
+// 錯誤 - 提交按鈕總是啟用
 <Button onPress={formik.handleSubmit}>Submit</Button>
 
 // CORRECT - Disabled when invalid or submitting
+// 正確 - 無效或提交時停用
 <Button
   onPress={formik.handleSubmit}
   isDisabled={!formik.isValid || formik.isSubmitting}
@@ -339,11 +384,13 @@ const MultiStepForm = () => {
 
 
 // WRONG - No error handling on mutation
+// 錯誤 - 變更沒有錯誤處理
 onSubmit: async (values) => {
   await createItem({ variables: { input: values } });
 }
 
 // CORRECT - Handle errors
+// 正確 - 處理錯誤
 onSubmit: async (values, { setSubmitting }) => {
   try {
     await createItem({ variables: { input: values } });
@@ -356,7 +403,11 @@ onSubmit: async (values, { setSubmitting }) => {
 ```
 
 ## Integration with Other Skills
+## 與其他技能的整合
 
 - **graphql-schema**: Mutation submission patterns
+- **graphql-schema**：變更提交模式
 - **react-ui-patterns**: Loading/error states
+- **react-ui-patterns**：載入/錯誤狀態
 - **testing-patterns**: Test form validation and submission
+- **testing-patterns**：測試表單驗證和提交

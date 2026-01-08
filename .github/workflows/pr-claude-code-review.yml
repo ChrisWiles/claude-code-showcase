@@ -1,23 +1,37 @@
-name: PR - Claude Code Review
+name: PR - Claude Code Review / PR - Claude Code 審查
+
+# 工作流程描述：當 PR 被建立、更新或有評論提及 @claude 時自動執行代碼審查
+# Workflow Description: Automatically runs code review when PR is created, updated, or when @claude is mentioned in comments
 
 on:
   pull_request:
+    # 觸發類型：PR 開啟、同步（新提交）、重新開啟
+    # Trigger types: PR opened, synchronized (new commits), reopened
     types: [opened, synchronize, reopened]
   issue_comment:
+    # 觸發類型：評論建立
+    # Trigger types: Comment created
     types: [created]
 
 concurrency:
+  # 並發控制：同一 PR 的工作流程會取消正在進行的運行
+  # Concurrency control: Cancels in-progress runs for the same PR
   group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
-  pull-requests: write
-  issues: read
+  # 權限設定
+  # Permissions configuration
+  contents: read          # 讀取倉庫內容 / Read repository contents
+  pull-requests: write    # 寫入 PR 評論 / Write PR comments
+  issues: read            # 讀取 issue 資訊 / Read issue information
 
 jobs:
   review:
-    # Run on PR events, or on issue comments that mention @claude
+    # 任務：執行代碼審查
+    # Job: Execute code review
+    # 運行條件：在 PR 事件時運行，或在包含 @claude 的 issue 評論時運行
+    # Run condition: Run on PR events, or on issue comments that mention @claude
     if: |
       github.event_name == 'pull_request' ||
       (github.event_name == 'issue_comment' &&
@@ -25,26 +39,34 @@ jobs:
        contains(github.event.comment.body, '@claude'))
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository (PR event)
+      - name: Checkout repository (PR event) / 檢出倉庫（PR 事件）
+        # 條件：僅在 PR 事件時執行
+        # Condition: Only run on PR events
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Checkout repository (issue_comment event)
+      - name: Checkout repository (issue_comment event) / 檢出倉庫（issue_comment 事件）
+        # 條件：僅在評論事件時執行
+        # Condition: Only run on comment events
         if: github.event_name == 'issue_comment'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Checkout PR branch (issue_comment event)
+      - name: Checkout PR branch (issue_comment event) / 檢出 PR 分支（issue_comment 事件）
+        # 步驟說明：切換到 PR 對應的分支
+        # Step description: Switch to the PR branch
         if: github.event_name == 'issue_comment'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr checkout ${{ github.event.issue.number }}
 
-      - name: Get PR base branch
+      - name: Get PR base branch / 獲取 PR 基礎分支
+        # 步驟說明：獲取 PR 的目標基礎分支名稱
+        # Step description: Get the target base branch name of the PR
         id: pr-info
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,7 +78,9 @@ jobs:
             echo "base_ref=$BASE_REF" >> $GITHUB_OUTPUT
           fi
 
-      - name: Claude Code Review
+      - name: Claude Code Review / Claude 代碼審查
+        # 步驟說明：使用 Claude 執行代碼審查
+        # Step description: Execute code review using Claude
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -65,11 +89,16 @@ jobs:
           track_progress: true
           prompt: |
             Review this Pull Request using the standards in .claude/agents/code-reviewer.md
+            根據 .claude/agents/code-reviewer.md 中的標準審查此 Pull Request
 
             1. Read .claude/agents/code-reviewer.md for the full checklist
+               閱讀 .claude/agents/code-reviewer.md 獲取完整的檢查清單
             2. Run `git diff origin/${{ steps.pr-info.outputs.base_ref }}...HEAD` to see changes
+               運行 `git diff origin/${{ steps.pr-info.outputs.base_ref }}...HEAD` 查看變更
             3. Apply the review checklist to modified files
+               將審查檢查清單應用於修改的文件
             4. Provide feedback organized by severity (Critical, Warning, Suggestion)
+               按嚴重程度（關鍵、警告、建議）提供反饋
           claude_args: |
             --max-turns 10
             --allowedTools "Read,Glob,Grep,Bash(git:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"

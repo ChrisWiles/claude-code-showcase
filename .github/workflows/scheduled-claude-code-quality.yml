@@ -1,38 +1,53 @@
-name: Scheduled - Code Quality Review
+name: Scheduled - Code Quality Review / 定期 - 代碼質量審查
+
+# 工作流程描述：每週隨機審查項目中的目錄以保持代碼質量
+# Workflow Description: Weekly random review of project directories to maintain code quality
 
 on:
   schedule:
-    # Run every Sunday at 8 AM UTC
+    # 運行時間：每週日上午 8 點（UTC）
+    # Run time: Every Sunday at 8 AM UTC
     - cron: '0 8 * * 0'
   workflow_dispatch:
+    # 手動觸發選項
+    # Manual trigger options
     inputs:
       num_dirs:
-        description: 'Number of random directories to review'
+        description: 'Number of random directories to review / 要審查的隨機目錄數量'
         required: false
         default: '3'
 
 concurrency:
+  # 並發控制：每次運行使用唯一 ID，不取消進行中的運行
+  # Concurrency control: Each run uses unique ID, doesn't cancel in-progress runs
   group: ${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  # 權限設定
+  # Permissions configuration
+  contents: write        # 寫入倉庫內容 / Write repository contents
+  pull-requests: write   # 創建 PR / Create PRs
 
 jobs:
   select-directories:
+    # 任務：選擇要審查的目錄
+    # Job: Select directories to review
     runs-on: ubuntu-latest
     outputs:
       directories: ${{ steps.select.outputs.directories }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository / 檢出倉庫
         uses: actions/checkout@v4
 
-      - name: Select random directories
+      - name: Select random directories / 選擇隨機目錄
+        # 步驟說明：在 src 目錄中隨機選擇包含 TypeScript 文件的目錄
+        # Step description: Randomly select directories in src that contain TypeScript files
         id: select
         run: |
           NUM_DIRS="${{ github.event.inputs.num_dirs || '3' }}"
 
+          # 在 src 中查找包含 TypeScript 文件的目錄
           # Find directories in src that have TypeScript files
           DIRS=$(find src -type d -exec sh -c 'ls "$1"/*.ts "$1"/*.tsx 2>/dev/null | grep -v -E "\.(test|spec|stories)\." | head -1' _ {} \; 2>/dev/null | \
             xargs -I {} dirname {} | \
@@ -45,6 +60,7 @@ jobs:
             exit 0
           fi
 
+          # 轉換為 JSON 數組
           # Convert to JSON array
           JSON_DIRS=$(echo "$DIRS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "directories=$JSON_DIRS" >> $GITHUB_OUTPUT
@@ -52,7 +68,11 @@ jobs:
           echo "$DIRS"
 
   review-directory:
+    # 任務：審查目錄
+    # Job: Review directory
     needs: select-directories
+    # 條件：僅在有目錄需要審查時執行
+    # Condition: Only run when there are directories to review
     if: needs.select-directories.outputs.directories != '[]'
     runs-on: ubuntu-latest
     strategy:
@@ -61,28 +81,32 @@ jobs:
       matrix:
         directory: ${{ fromJson(needs.select-directories.outputs.directories) }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository / 檢出倉庫
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node.js / 設置 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies / 安裝依賴
         run: npm ci
 
-      - name: Generate branch name
+      - name: Generate branch name / 生成分支名稱
+        # 步驟說明：根據目錄名稱生成分支名稱
+        # Step description: Generate branch name based on directory name
         id: branch
         run: |
           DIR_SLUG=$(echo "${{ matrix.directory }}" | sed 's/[^a-zA-Z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//' | cut -c1-30)
           BRANCH_NAME="claude/code-quality-${DIR_SLUG}-$(date +%Y%m%d)"
           echo "name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Claude Code Quality Review
+      - name: Claude Code Quality Review / Claude 代碼質量審查
+        # 步驟說明：使用 Claude 執行代碼質量審查並修復問題
+        # Step description: Execute code quality review and fix issues using Claude
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -92,66 +116,83 @@ jobs:
           branch_prefix: claude/code-quality-
           track_progress: true
           prompt: |
-            # Weekly Code Quality Review
+            # Weekly Code Quality Review / 每週代碼質量審查
 
             You are performing a scheduled code quality review of a specific directory.
+            你正在執行定期的代碼質量審查，針對特定目錄。
 
-            ## Target Directory
+            ## Target Directory / 目標目錄
             **Review: `${{ matrix.directory }}`**
+            **審查：`${{ matrix.directory }}`**
 
-            ## Your Tasks
+            ## Your Tasks / 你的任務
 
-            1. **Read the code review standards**: Read `.claude/agents/code-reviewer.md` for the full checklist
+            1. **Read the code review standards / 閱讀代碼審查標準**: Read `.claude/agents/code-reviewer.md` for the full checklist
+               閱讀 `.claude/agents/code-reviewer.md` 獲取完整的檢查清單
 
-            2. **Analyze all files in the directory**:
+            2. **Analyze all files in the directory / 分析目錄中的所有文件**:
                - List all .ts and .tsx files (excluding .test., .spec., .stories.)
-               - Read each file thoroughly
-               - Apply the review checklist
+                 列出所有 .ts 和 .tsx 文件（排除 .test.、.spec.、.stories.）
+               - Read each file thoroughly / 仔細閱讀每個文件
+               - Apply the review checklist / 應用審查檢查清單
 
-            3. **Focus on finding and FIXING issues**:
+            3. **Focus on finding and FIXING issues / 專注於發現和修復問題**:
                - TypeScript strict mode violations (any types, missing types)
+                 TypeScript 嚴格模式違規（any 類型、缺少類型）
                - React anti-patterns (bad useEffect, unnecessary memoization)
+                 React 反模式（錯誤的 useEffect、不必要的 memoization）
                - Code style issues (mutations, deep nesting, poor naming)
-               - Missing error handling
-               - Security issues
-               - Performance problems
+                 代碼風格問題（變異、深層嵌套、糟糕的命名）
+               - Missing error handling / 缺少錯誤處理
+               - Security issues / 安全問題
+               - Performance problems / 性能問題
 
-            4. **Make the fixes yourself**:
-               - Don't just report issues - FIX THEM
-               - Use Edit tool to update files
-               - Ensure fixes don't break anything
+            4. **Make the fixes yourself / 自己進行修復**:
+               - Don't just report issues - FIX THEM / 不要只是報告問題 - 修復它們
+               - Use Edit tool to update files / 使用 Edit 工具更新文件
+               - Ensure fixes don't break anything / 確保修復不會破壞任何東西
 
-            5. **Run verification**:
+            5. **Run verification / 運行驗證**:
                - `npm run lint` - verify no lint errors introduced
+                 `npm run lint` - 驗證沒有引入 lint 錯誤
                - If errors occur, fix them or revert changes
+                 如果出現錯誤，修復它們或還原變更
 
-            6. **Create PR if fixes were made**:
-               - Create a branch from main
-               - Commit all fixes with descriptive message
+            6. **Create PR if fixes were made / 如果有修復則創建 PR**:
+               - Create a branch from main / 從 main 創建分支
+               - Commit all fixes with descriptive message / 提交所有修復並附帶描述性訊息
                - PR title: "fix(${{ matrix.directory }}): code quality improvements"
-               - PR body should list fixes applied
+               - PR body should list fixes applied / PR 正文應列出應用的修復
 
-            ## Guidelines
-            - Be thorough but focused on this directory only
-            - Fix issues that are clear improvements
-            - Don't refactor working code just for style
+            ## Guidelines / 指南
+            - Be thorough but focused on this directory only / 要徹底但只專注於此目錄
+            - Fix issues that are clear improvements / 修復明確改進的問題
+            - Don't refactor working code just for style / 不要僅為風格而重構可運行的代碼
             - If no issues found, report that and skip PR creation
+              如果未發現問題，報告並跳過 PR 創建
           claude_args: |
             --max-turns 35
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm run lint*)"
 
   report-completion:
+    # 任務：報告完成狀態
+    # Job: Report completion status
     needs: [select-directories, review-directory]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Summary
+      - name: Summary / 摘要
+        # 步驟說明：生成工作流程摘要
+        # Step description: Generate workflow summary
         run: |
           echo "## Code Quality Review Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## 代碼質量審查完成" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Reviewed directories:" >> $GITHUB_STEP_SUMMARY
+          echo "已審查的目錄：" >> $GITHUB_STEP_SUMMARY
           echo '${{ needs.select-directories.outputs.directories }}' | jq -r '.[]' | while read dir; do
             echo "- \`$dir\`" >> $GITHUB_STEP_SUMMARY
           done
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Check for any PRs created by this workflow." >> $GITHUB_STEP_SUMMARY
+          echo "檢查此工作流程創建的任何 PR。" >> $GITHUB_STEP_SUMMARY

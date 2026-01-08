@@ -1,38 +1,52 @@
-name: Scheduled - Dependency Audit
+name: Scheduled - Dependency Audit / 定期 - 依賴審計
+
+# 工作流程描述：定期檢查和更新過時的依賴及安全漏洞
+# Workflow Description: Periodically checks and updates outdated dependencies and security vulnerabilities
 
 on:
   schedule:
-    # Run every 2 weeks (1st and 15th of each month) at 10 AM UTC
+    # 運行時間：每兩週（每月 1 號和 15 號）上午 10 點（UTC）
+    # Run time: Every 2 weeks (1st and 15th of each month) at 10 AM UTC
     - cron: '0 10 1,15 * *'
   workflow_dispatch:
+    # 手動觸發
+    # Manual trigger
 
 concurrency:
+  # 並發控制：同一分支的工作流程會取消正在進行的運行
+  # Concurrency control: Cancels in-progress runs for the same branch
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  # 權限設定
+  # Permissions configuration
+  contents: write        # 寫入倉庫內容 / Write repository contents
+  pull-requests: write   # 創建 PR / Create PRs
 
 jobs:
   dependency-audit:
+    # 任務：依賴審計
+    # Job: Dependency audit
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository / 檢出倉庫
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node.js / 設置 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies / 安裝依賴
         run: npm ci
 
-      - name: Check for outdated dependencies
+      - name: Check for outdated dependencies / 檢查過時的依賴
+        # 步驟說明：檢查是否有過時的 npm 套件
+        # Step description: Check if there are outdated npm packages
         id: check-outdated
         run: |
           echo "Checking for outdated dependencies..."
@@ -47,7 +61,9 @@ jobs:
             cat /tmp/outdated.json
           fi
 
-      - name: Run security audit
+      - name: Run security audit / 運行安全審計
+        # 步驟說明：運行 npm audit 檢查安全漏洞
+        # Step description: Run npm audit to check for security vulnerabilities
         id: security-audit
         run: |
           echo "Running security audit..."
@@ -61,7 +77,9 @@ jobs:
             echo "vulnerabilities=0" >> $GITHUB_OUTPUT
           fi
 
-      - name: Claude Dependency Analysis & Update
+      - name: Claude Dependency Analysis & Update / Claude 依賴分析與更新
+        # 條件：僅在有過時依賴或安全漏洞時執行
+        # Condition: Only run when there are outdated dependencies or security vulnerabilities
         if: steps.check-outdated.outputs.has_outdated == 'true' || steps.security-audit.outputs.vulnerabilities != '0'
         uses: anthropics/claude-code-action@beta
         with:
@@ -72,44 +90,62 @@ jobs:
           branch_prefix: claude/deps-update-
           track_progress: true
           prompt: |
-            # Dependency Audit
+            # Dependency Audit / 依賴審計
 
             You are running a scheduled dependency audit.
+            你正在執行定期依賴審計。
 
-            ## Your Tasks
+            ## Your Tasks / 你的任務
 
-            1. **Analyze outdated packages**: Run `npm outdated` and review results
+            1. **Analyze outdated packages / 分析過時的套件**: Run `npm outdated` and review results
+               運行 `npm outdated` 並審查結果
 
-            2. **Analyze security vulnerabilities**: Run `npm audit` and review results
+            2. **Analyze security vulnerabilities / 分析安全漏洞**: Run `npm audit` and review results
+               運行 `npm audit` 並審查結果
 
-            3. **Update packages safely**:
+            3. **Update packages safely / 安全地更新套件**:
                - Use `npm update {package}` for minor/patch updates
+                 對於小版本/補丁更新使用 `npm update {package}`
                - For major versions, use `npm install {package}@latest` only if safe
+                 對於主版本更新，僅在安全時使用 `npm install {package}@latest`
                - Run `npm audit fix` for security fixes
+                 運行 `npm audit fix` 修復安全問題
 
-            4. **Verify updates**:
+            4. **Verify updates / 驗證更新**:
                - Run `npm run lint` to check for issues
+                 運行 `npm run lint` 檢查問題
                - Run `npm test` to verify tests pass
+                 運行 `npm test` 驗證測試通過
                - If anything fails, revert that specific update
+                 如果有任何失敗，還原該特定更新
 
-            5. **Create PR** if any updates were made:
-               - Create branch from main
+            5. **Create PR / 創建 PR** if any updates were made:
+               如果有任何更新：
+               - Create branch from main / 從 main 創建分支
                - Commit package.json and package-lock.json changes
+                 提交 package.json 和 package-lock.json 變更
                - PR title: "chore(deps): update dependencies"
-               - PR body should list:
+               - PR body should list / PR 正文應列出:
                  - Each package updated with old → new version
+                   每個更新的套件及其舊版本 → 新版本
                  - Security vulnerabilities fixed (if any)
+                   修復的安全漏洞（如有）
 
-            ## Guidelines
+            ## Guidelines / 指南
             - Be CONSERVATIVE - when in doubt, don't update
+              保守行事 - 如有疑問，不要更新
             - If tests fail after an update, revert that update
-            - Group related updates together
+              如果更新後測試失敗，還原該更新
+            - Group related updates together / 將相關更新分組
             - If NO updates are possible, report that and don't create a PR
+              如果無法更新，報告並不要創建 PR
           claude_args: |
             --max-turns 40
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm:*)"
 
-      - name: Report no updates needed
+      - name: Report no updates needed / 報告不需要更新
+        # 條件：沒有過時依賴且無安全漏洞時執行
+        # Condition: Run when there are no outdated dependencies and no security vulnerabilities
         if: steps.check-outdated.outputs.has_outdated == 'false' && steps.security-audit.outputs.vulnerabilities == '0'
         run: |
           echo "All dependencies are up to date and no security vulnerabilities found."

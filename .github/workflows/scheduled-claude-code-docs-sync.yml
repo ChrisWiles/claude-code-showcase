@@ -1,34 +1,48 @@
-name: Scheduled - Documentation Sync
+name: Scheduled - Documentation Sync / 定期 - 文檔同步
+
+# 工作流程描述：定期檢查代碼變更並同步更新文檔
+# Workflow Description: Periodically checks code changes and syncs documentation updates
 
 on:
   schedule:
-    # Run on the 1st of every month at 9 AM UTC
+    # 運行時間：每月 1 號上午 9 點（UTC）
+    # Run time: 1st of every month at 9 AM UTC
     - cron: '0 9 1 * *'
   workflow_dispatch:
+    # 手動觸發選項
+    # Manual trigger options
     inputs:
       days_back:
-        description: 'Number of days to look back for changes'
+        description: 'Number of days to look back for changes / 回溯檢查變更的天數'
         required: false
         default: '30'
 
 concurrency:
+  # 並發控制：同一分支的工作流程會取消正在進行的運行
+  # Concurrency control: Cancels in-progress runs for the same branch
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  # 權限設定
+  # Permissions configuration
+  contents: write        # 寫入倉庫內容 / Write repository contents
+  pull-requests: write   # 創建 PR / Create PRs
 
 jobs:
   docs-sync:
+    # 任務：文檔同步
+    # Job: Documentation synchronization
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository / 檢出倉庫
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Check for code changes in period
+      - name: Check for code changes in period / 檢查期間內的代碼變更
+        # 步驟說明：檢查指定天數內的代碼變更
+        # Step description: Check code changes within the specified number of days
         id: check-changes
         run: |
           DAYS_BACK="${{ github.event.inputs.days_back || '30' }}"
@@ -36,6 +50,7 @@ jobs:
 
           echo "Checking for changes since: $SINCE_DATE"
 
+          # 獲取變更的代碼文件（排除文檔本身）
           # Get changed code files (excluding docs themselves)
           CHANGED_FILES=$(git log --since="$SINCE_DATE" --name-only --pretty=format: -- \
             '*.ts' '*.tsx' '*.js' '*.jsx' \
@@ -55,7 +70,9 @@ jobs:
 
           echo "since_date=$SINCE_DATE" >> $GITHUB_OUTPUT
 
-      - name: Claude Documentation Sync
+      - name: Claude Documentation Sync / Claude 文檔同步
+        # 條件：僅在有代碼變更時執行
+        # Condition: Only run when there are code changes
         if: steps.check-changes.outputs.has_changes == 'true'
         uses: anthropics/claude-code-action@beta
         with:
@@ -66,50 +83,62 @@ jobs:
           branch_prefix: claude/docs-sync-
           track_progress: true
           prompt: |
-            # Monthly Documentation Sync
+            # Monthly Documentation Sync / 每月文檔同步
 
             You are running a scheduled documentation sync. Code has changed since ${{ steps.check-changes.outputs.since_date }}.
+            你正在執行定期文檔同步。代碼自 ${{ steps.check-changes.outputs.since_date }} 以來已有變更。
 
-            ## Changed Files
+            ## Changed Files / 變更的文件
             The following code files have been modified:
+            以下代碼文件已被修改：
             ```
             ${{ steps.check-changes.outputs.changed_files }}
             ```
 
-            ## Your Tasks
+            ## Your Tasks / 你的任務
 
-            1. **Analyze Changes**: Review the changed files to understand what functionality was added, modified, or removed.
+            1. **Analyze Changes / 分析變更**: Review the changed files to understand what functionality was added, modified, or removed.
+               審查變更的文件以了解新增、修改或移除了哪些功能。
 
-            2. **Find Related Documentation**: Search for documentation that might be affected:
-               - `/docs/` directory
-               - README.md files
-               - TSDoc comments in the code
+            2. **Find Related Documentation / 查找相關文檔**: Search for documentation that might be affected:
+               搜索可能受影響的文檔：
+               - `/docs/` directory / `/docs/` 目錄
+               - README.md files / README.md 文件
+               - TSDoc comments in the code / 代碼中的 TSDoc 註釋
 
-            3. **Check for Actual Problems**: For each code change, determine if existing docs are now WRONG:
-               - Do code examples still work?
-               - Are API signatures/types now incorrect?
-               - Are prop interfaces outdated?
+            3. **Check for Actual Problems / 檢查實際問題**: For each code change, determine if existing docs are now WRONG:
+               對於每個代碼變更，判斷現有文檔是否現在是錯誤的：
+               - Do code examples still work? / 代碼示例是否仍然有效？
+               - Are API signatures/types now incorrect? / API 簽名/類型是否現在不正確？
+               - Are prop interfaces outdated? / 屬性接口是否已過時？
 
-            4. **Fix Only What's Broken**: If you find documentation that is actually wrong:
-               - Fix incorrect code examples
-               - Update wrong API signatures and types
+            4. **Fix Only What's Broken / 只修復錯誤的部分**: If you find documentation that is actually wrong:
+               如果你發現文檔確實有誤：
+               - Fix incorrect code examples / 修復不正確的代碼示例
+               - Update wrong API signatures and types / 更新錯誤的 API 簽名和類型
                - Add docs ONLY for significant new features that have zero documentation
+                 僅為完全沒有文檔的重要新功能添加文檔
 
-            5. **Create a PR**: If you made any changes:
-               - Create a new branch from main
-               - Commit all documentation updates
-               - Create a PR with a summary of what was fixed
+            5. **Create a PR / 創建 PR**: If you made any changes:
+               如果你做了任何變更：
+               - Create a new branch from main / 從 main 創建新分支
+               - Commit all documentation updates / 提交所有文檔更新
+               - Create a PR with a summary of what was fixed / 創建 PR 並總結修復內容
 
-            ## CRITICAL Guidelines
+            ## CRITICAL Guidelines / 關鍵指南
             - Documentation is a LIVING DOCUMENT - only fix things that are actually WRONG
-            - DO NOT add changelog-style entries
-            - ONLY update docs when they are incorrect or misleading
+              文檔是活文檔 - 只修復實際錯誤的內容
+            - DO NOT add changelog-style entries / 不要添加變更日誌式條目
+            - ONLY update docs when they are incorrect or misleading / 僅在文檔不正確或誤導時更新
             - If no problems are found, report that and DO NOT create a PR
+              如果未發現問題，報告並不要創建 PR
           claude_args: |
             --max-turns 30
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*)"
 
-      - name: Report no changes
+      - name: Report no changes / 報告無變更
+        # 條件：沒有代碼變更時執行
+        # Condition: Run when there are no code changes
         if: steps.check-changes.outputs.has_changes == 'false'
         run: |
           echo "No code changes found in the last ${{ github.event.inputs.days_back || '30' }} days."
