@@ -9,8 +9,6 @@ This directory contains project-specific skills that provide Claude with domain 
 |-------|-------------|
 | [testing-patterns](./testing-patterns/SKILL.md) | Jest testing, factory functions, mocking strategies, TDD workflow |
 | [systematic-debugging](./systematic-debugging/SKILL.md) | Four-phase debugging methodology, root cause analysis |
-| [security-best-practices](./security-best-practices/SKILL.md) | Security guidelines, input validation, authentication, vulnerability prevention |
-| [performance-optimization](./performance-optimization/SKILL.md) | Performance patterns for React, Node.js, memoization, lazy loading, caching |
 
 ### React & UI
 | Skill | Description |

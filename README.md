@@ -32,7 +32,7 @@ We even use Claude Code for ticket triage. It reads the ticket, digs into the co
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Quick Start](#quick-start) 📖 [5-Minute Guide](QUICKSTART.md)
+- [Quick Start](#quick-start)
 - [Configuration Reference](#configuration-reference)
   - [CLAUDE.md - Project Memory](#claudemd---project-memory)
   - [settings.json - Hooks & Environment](#settingsjson---hooks--environment)
@@ -45,8 +45,6 @@ We even use Claude Code for ticket triage. It reads the ticket, digs into the co
 - [GitHub Actions Workflows](#github-actions-workflows)
 - [Best Practices](#best-practices)
 - [Examples in This Repository](#examples-in-this-repository)
-- [Troubleshooting](TROUBLESHOOTING.md) 🔧
-- [Changelog](CHANGELOG.md) 📝
 
 ---
 
@@ -98,8 +96,6 @@ your-project/
 ---
 
 ## Quick Start
-
-**New to Claude Code configuration?** Check out the [Quick Start Guide](QUICKSTART.md) for a 5-minute setup!
 
 ### 1. Create the `.claude` directory
 
@@ -902,8 +898,6 @@ Commit everything except:
 
 | File | Description |
 |------|-------------|
-| **Getting Started** | |
-| [QUICKSTART.md](QUICKSTART.md) | **5-minute quick start guide** |
 | [CLAUDE.md](CLAUDE.md) | Example project memory file |
 | [.claude/settings.json](.claude/settings.json) | Full hooks configuration |
 | [.claude/settings.md](.claude/settings.md) | Human-readable hooks documentation |
@@ -918,13 +912,10 @@ Commit everything except:
 | [.claude/commands/pr-summary.md](.claude/commands/pr-summary.md) | Generate PR summary |
 | [.claude/commands/code-quality.md](.claude/commands/code-quality.md) | Quality checks |
 | [.claude/commands/docs-sync.md](.claude/commands/docs-sync.md) | Documentation sync |
-| [.claude/commands/validate-config.md](.claude/commands/validate-config.md) | **Configuration validation** |
-| [.claude/commands/list-skills.md](.claude/commands/list-skills.md) | **List available skills** |
 | **Hooks** | |
 | [.claude/hooks/skill-eval.sh](.claude/hooks/skill-eval.sh) | Skill evaluation wrapper |
-| [.claude/hooks/skill-eval.js](.claude/hooks/skill-eval.js) | **Node.js skill matching engine (v2.1 - optimized)** |
+| [.claude/hooks/skill-eval.js](.claude/hooks/skill-eval.js) | Node.js skill matching engine |
 | [.claude/hooks/skill-rules.json](.claude/hooks/skill-rules.json) | Pattern matching rules |
-| [.claude/hooks/skill-rules.schema.json](.claude/hooks/skill-rules.schema.json) | JSON Schema for validation |
 | **Skills** | |
 | [.claude/skills/testing-patterns/SKILL.md](.claude/skills/testing-patterns/SKILL.md) | TDD, factory functions, mocking |
 | [.claude/skills/systematic-debugging/SKILL.md](.claude/skills/systematic-debugging/SKILL.md) | Four-phase debugging |
@@ -932,31 +923,19 @@ Commit everything except:
 | [.claude/skills/graphql-schema/SKILL.md](.claude/skills/graphql-schema/SKILL.md) | Queries, mutations, codegen |
 | [.claude/skills/core-components/SKILL.md](.claude/skills/core-components/SKILL.md) | Design system, tokens |
 | [.claude/skills/formik-patterns/SKILL.md](.claude/skills/formik-patterns/SKILL.md) | Form handling, validation |
-| [.claude/skills/security-best-practices/SKILL.md](.claude/skills/security-best-practices/SKILL.md) | **Security guidelines and best practices** |
-| [.claude/skills/performance-optimization/SKILL.md](.claude/skills/performance-optimization/SKILL.md) | **Performance optimization patterns** |
 | **GitHub Workflows** | |
 | [.github/workflows/pr-claude-code-review.yml](.github/workflows/pr-claude-code-review.yml) | Auto PR review |
 | [.github/workflows/scheduled-claude-code-docs-sync.yml](.github/workflows/scheduled-claude-code-docs-sync.yml) | Monthly docs sync |
 | [.github/workflows/scheduled-claude-code-quality.yml](.github/workflows/scheduled-claude-code-quality.yml) | Weekly quality review |
 | [.github/workflows/scheduled-claude-code-dependency-audit.yml](.github/workflows/scheduled-claude-code-dependency-audit.yml) | Biweekly dependency audit |
-| **Documentation** | |
-| [QUICKSTART.md](QUICKSTART.md) | **5-minute quick start guide** |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | **Common issues and solutions** |
-| [CHANGELOG.md](CHANGELOG.md) | **Version history and release notes** |
 
 ---
 
 ## Learn More
 
-### Official Resources
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Code Action](https://github.com/anthropics/claude-code-action) - GitHub Action
 - [Anthropic API](https://docs.anthropic.com/en/api)
-
-### This Repository
-- 🚀 [Quick Start Guide](QUICKSTART.md) - Get started in 5 minutes
-- 🔧 [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
-- 📝 [Changelog](CHANGELOG.md) - What's new and improved
 
 ---
 
