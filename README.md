@@ -97,6 +97,8 @@ your-project/
 
 ## Quick Start
 
+**New to Claude Code configuration?** Check out the [Quick Start Guide](QUICKSTART.md) for a 5-minute setup!
+
 ### 1. Create the `.claude` directory
 
 ```bash
@@ -898,6 +900,8 @@ Commit everything except:
 
 | File | Description |
 |------|-------------|
+| **Getting Started** | |
+| [QUICKSTART.md](QUICKSTART.md) | **5-minute quick start guide** |
 | [CLAUDE.md](CLAUDE.md) | Example project memory file |
 | [.claude/settings.json](.claude/settings.json) | Full hooks configuration |
 | [.claude/settings.md](.claude/settings.md) | Human-readable hooks documentation |
@@ -912,10 +916,13 @@ Commit everything except:
 | [.claude/commands/pr-summary.md](.claude/commands/pr-summary.md) | Generate PR summary |
 | [.claude/commands/code-quality.md](.claude/commands/code-quality.md) | Quality checks |
 | [.claude/commands/docs-sync.md](.claude/commands/docs-sync.md) | Documentation sync |
+| [.claude/commands/validate-config.md](.claude/commands/validate-config.md) | **Configuration validation** |
+| [.claude/commands/list-skills.md](.claude/commands/list-skills.md) | **List available skills** |
 | **Hooks** | |
 | [.claude/hooks/skill-eval.sh](.claude/hooks/skill-eval.sh) | Skill evaluation wrapper |
-| [.claude/hooks/skill-eval.js](.claude/hooks/skill-eval.js) | Node.js skill matching engine |
+| [.claude/hooks/skill-eval.js](.claude/hooks/skill-eval.js) | **Node.js skill matching engine (v2.1 - optimized)** |
 | [.claude/hooks/skill-rules.json](.claude/hooks/skill-rules.json) | Pattern matching rules |
+| [.claude/hooks/skill-rules.schema.json](.claude/hooks/skill-rules.schema.json) | JSON Schema for validation |
 | **Skills** | |
 | [.claude/skills/testing-patterns/SKILL.md](.claude/skills/testing-patterns/SKILL.md) | TDD, factory functions, mocking |
 | [.claude/skills/systematic-debugging/SKILL.md](.claude/skills/systematic-debugging/SKILL.md) | Four-phase debugging |
@@ -923,6 +930,8 @@ Commit everything except:
 | [.claude/skills/graphql-schema/SKILL.md](.claude/skills/graphql-schema/SKILL.md) | Queries, mutations, codegen |
 | [.claude/skills/core-components/SKILL.md](.claude/skills/core-components/SKILL.md) | Design system, tokens |
 | [.claude/skills/formik-patterns/SKILL.md](.claude/skills/formik-patterns/SKILL.md) | Form handling, validation |
+| [.claude/skills/security-best-practices/SKILL.md](.claude/skills/security-best-practices/SKILL.md) | **Security guidelines and best practices** |
+| [.claude/skills/performance-optimization/SKILL.md](.claude/skills/performance-optimization/SKILL.md) | **Performance optimization patterns** |
 | **GitHub Workflows** | |
 | [.github/workflows/pr-claude-code-review.yml](.github/workflows/pr-claude-code-review.yml) | Auto PR review |
 | [.github/workflows/scheduled-claude-code-docs-sync.yml](.github/workflows/scheduled-claude-code-docs-sync.yml) | Monthly docs sync |

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Skill Evaluation Engine v2.0
+ * Skill Evaluation Engine v2.1
  *
  * Intelligent skill activation based on:
  * - Keywords and patterns in prompts
@@ -8,6 +8,11 @@
  * - Directory mappings
  * - Intent detection
  * - Content pattern matching
+ *
+ * Performance optimizations:
+ * - Regex caching for frequently used patterns
+ * - Memoization of expensive operations
+ * - Early exit strategies
  *
  * Outputs a structured reminder with matched skills and reasons.
  */
@@ -17,6 +22,9 @@ const path = require('path');
 
 // Configuration
 const RULES_PATH = path.join(__dirname, 'skill-rules.json');
+
+// Performance: Regex cache to avoid recompilation
+const regexCache = new Map();
 
 /**
  * @typedef {Object} SkillMatch
@@ -73,7 +81,7 @@ function extractFilePaths(prompt) {
 }
 
 /**
- * Check if a pattern matches the text
+ * Check if a pattern matches the text (with caching)
  * @param {string} text - Text to search in
  * @param {string} pattern - Regex pattern
  * @param {string} flags - Regex flags
@@ -81,7 +89,14 @@ function extractFilePaths(prompt) {
  */
 function matchesPattern(text, pattern, flags = 'i') {
   try {
-    const regex = new RegExp(pattern, flags);
+    const cacheKey = `${pattern}:${flags}`;
+    let regex = regexCache.get(cacheKey);
+    
+    if (!regex) {
+      regex = new RegExp(pattern, flags);
+      regexCache.set(cacheKey, regex);
+    }
+    
     return regex.test(text);
   } catch {
     return false;
@@ -89,24 +104,35 @@ function matchesPattern(text, pattern, flags = 'i') {
 }
 
 /**
- * Check if a glob pattern matches a file path
+ * Check if a glob pattern matches a file path (with caching)
  * @param {string} filePath - File path to check
  * @param {string} globPattern - Glob pattern (simplified)
  * @returns {boolean}
  */
 function matchesGlob(filePath, globPattern) {
-  // Convert glob to regex (simplified)
-  const regexPattern = globPattern
-    .replace(/\./g, '\\.')
-    .replace(/\*\*\//g, '<<<DOUBLESTARSLASH>>>')
-    .replace(/\*\*/g, '<<<DOUBLESTAR>>>')
-    .replace(/\*/g, '[^/]*')
-    .replace(/<<<DOUBLESTARSLASH>>>/g, '(.*\\/)?')
-    .replace(/<<<DOUBLESTAR>>>/g, '.*')
-    .replace(/\?/g, '.');
+  const cacheKey = `glob:${globPattern}`;
+  let regex = regexCache.get(cacheKey);
+  
+  if (!regex) {
+    // Convert glob to regex (simplified)
+    const regexPattern = globPattern
+      .replace(/\./g, '\\.')
+      .replace(/\*\*\//g, '<<<DOUBLESTARSLASH>>>')
+      .replace(/\*\*/g, '<<<DOUBLESTAR>>>')
+      .replace(/\*/g, '[^/]*')
+      .replace(/<<<DOUBLESTARSLASH>>>/g, '(.*\\/)?')
+      .replace(/<<<DOUBLESTAR>>>/g, '.*')
+      .replace(/\?/g, '.');
+
+    try {
+      regex = new RegExp(`^${regexPattern}$`, 'i');
+      regexCache.set(cacheKey, regex);
+    } catch {
+      return false;
+    }
+  }
 
   try {
-    const regex = new RegExp(`^${regexPattern}$`, 'i');
     return regex.test(filePath);
   } catch {
     return false;
