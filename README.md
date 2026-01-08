@@ -32,7 +32,7 @@ We even use Claude Code for ticket triage. It reads the ticket, digs into the co
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Quick Start](#quick-start)
+- [Quick Start](#quick-start) 📖 [5-Minute Guide](QUICKSTART.md)
 - [Configuration Reference](#configuration-reference)
   - [CLAUDE.md - Project Memory](#claudemd---project-memory)
   - [settings.json - Hooks & Environment](#settingsjson---hooks--environment)
@@ -45,6 +45,8 @@ We even use Claude Code for ticket triage. It reads the ticket, digs into the co
 - [GitHub Actions Workflows](#github-actions-workflows)
 - [Best Practices](#best-practices)
 - [Examples in This Repository](#examples-in-this-repository)
+- [Troubleshooting](TROUBLESHOOTING.md) 🔧
+- [Changelog](CHANGELOG.md) 📝
 
 ---
 
@@ -937,14 +939,24 @@ Commit everything except:
 | [.github/workflows/scheduled-claude-code-docs-sync.yml](.github/workflows/scheduled-claude-code-docs-sync.yml) | Monthly docs sync |
 | [.github/workflows/scheduled-claude-code-quality.yml](.github/workflows/scheduled-claude-code-quality.yml) | Weekly quality review |
 | [.github/workflows/scheduled-claude-code-dependency-audit.yml](.github/workflows/scheduled-claude-code-dependency-audit.yml) | Biweekly dependency audit |
+| **Documentation** | |
+| [QUICKSTART.md](QUICKSTART.md) | **5-minute quick start guide** |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | **Common issues and solutions** |
+| [CHANGELOG.md](CHANGELOG.md) | **Version history and release notes** |
 
 ---
 
 ## Learn More
 
+### Official Resources
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Code Action](https://github.com/anthropics/claude-code-action) - GitHub Action
 - [Anthropic API](https://docs.anthropic.com/en/api)
+
+### This Repository
+- 🚀 [Quick Start Guide](QUICKSTART.md) - Get started in 5 minutes
+- 🔧 [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
+- 📝 [Changelog](CHANGELOG.md) - What's new and improved
 
 ---
 
