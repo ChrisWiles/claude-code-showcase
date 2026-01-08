@@ -317,6 +317,38 @@
         ]
       },
       "relatedSkills": ["systematic-debugging"]
+    },
+    "security-best-practices": {
+      "description": "Security best practices including input validation, authentication, authorization, and vulnerability prevention",
+      "priority": 9,
+      "triggers": {
+        "keywords": ["security", "auth", "authentication", "authorization", "vulnerability", "exploit", "injection", "xss", "csrf", "sanitize", "validate input"],
+        "keywordPatterns": ["\\bsecur\\w*\\b", "\\bauth\\b", "\\bsanitiz\\w*\\b", "sql.injection", "xss", "csrf"],
+        "intentPatterns": [
+          "(?:implement|add|create).*(?:auth|security|validation)",
+          "(?:secure|protect).*(?:endpoint|route|api)",
+          "(?:prevent|avoid).*(?:injection|xss|csrf|vulnerability)",
+          "(?:review|check).*(?:security|vulnerability)"
+        ],
+        "contentPatterns": ["password", "token", "SECRET", "API_KEY", "authenticate", "authorize"]
+      },
+      "relatedSkills": ["testing-patterns", "systematic-debugging"]
+    },
+    "performance-optimization": {
+      "description": "Performance optimization for React, TypeScript, and Node.js including memoization, lazy loading, bundle optimization, and database performance",
+      "priority": 7,
+      "triggers": {
+        "keywords": ["performance", "optimize", "slow", "lag", "bundle size", "memoize", "cache", "lazy load", "virtualize"],
+        "keywordPatterns": ["\\bperform\\w*\\b", "\\boptimiz\\w*\\b", "\\bmemo\\w*\\b", "bundle.size"],
+        "intentPatterns": [
+          "(?:improve|optimize|enhance).*(?:performance|speed|load time)",
+          "(?:reduce|decrease).*(?:bundle|size|load time)",
+          "(?:fix|resolve).*(?:slow|lag|performance)",
+          "(?:profile|measure).*(?:performance|render)"
+        ],
+        "contentPatterns": ["React.memo", "useMemo", "useCallback", "lazy\\(", "Suspense"]
+      },
+      "relatedSkills": ["react-ui-patterns", "systematic-debugging"]
     }
   }
 }
