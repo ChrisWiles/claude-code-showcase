@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
+TEMPLATES_DIR="${ROOT_DIR}/templates"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  ccs audit <project_dir> [--output <file>]
+  ccs apply <project_dir>
+
+Notes:
+  - apply is non-destructive: it will NOT overwrite existing files.
+  - audit prints Markdown to stdout (or writes with --output).
+USAGE
+}
+
+require_cmd() {
+  local cmd="$1"
+  command -v "${cmd}" >/dev/null 2>&1 || {
+    echo "ccs: missing required command: ${cmd}" >&2
+    exit 1
+  }
+}
+
+abspath() {
+  local p="$1"
+  if [[ "${p}" = /* ]]; then
+    printf '%s\n' "${p}"
+    return 0
+  fi
+  printf '%s\n' "$(cd -- "${p%/*:-.}" && pwd -P)/${p##*/}"
+}
+
+detect_stack() {
+  local project_dir="$1"
+  local parts=()
+  [[ -f "${project_dir}/package.json" ]] && parts+=("Node.js")
+  [[ -f "${project_dir}/tsconfig.json" ]] && parts+=("TypeScript")
+  [[ -f "${project_dir}/pyproject.toml" || -f "${project_dir}/requirements.txt" ]] && parts+=("Python")
+  [[ -f "${project_dir}/go.mod" ]] && parts+=("Go")
+  [[ -f "${project_dir}/Cargo.toml" ]] && parts+=("Rust")
+  if [[ ${#parts[@]} -eq 0 ]]; then
+    printf '%s\n' "Unknown"
+    return 0
+  fi
+  local IFS=", "
+  printf '%s\n' "${parts[*]}"
+}
+
+detect_quality_commands_md() {
+  local project_dir="$1"
+
+  # Prefer explicit scripts from package.json when present.
+  if [[ -f "${project_dir}/package.json" ]]; then
+    python3 - "${project_dir}/package.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pkg_path = Path(sys.argv[1])
+pkg = json.loads(pkg_path.read_text(encoding="utf-8"))
+scripts = (pkg.get("scripts") or {})
+
+def pick(*names: str):
+  for name in names:
+    if name in scripts:
+      return f"npm run {name}"
+  return None
+
+typecheck = pick("typecheck", "check-types")
+lint = pick("lint")
+test = pick("test")
+build = pick("build")
+
+def row(label, cmd):
+  if cmd:
+    return f"- **{label}**: `{cmd}`"
+  return f"- **{label}**: `TODO`"
+
+print(row("typecheck", typecheck))
+print(row("lint", lint))
+print(row("test", test))
+print(row("build", build))
+PY
+    return 0
+  fi
+
+  # Python-only repos: best-effort defaults.
+  if [[ -f "${project_dir}/pyproject.toml" || -f "${project_dir}/requirements.txt" ]]; then
+    cat <<'MD'
+- **typecheck**: `mypy .` (if used)
+- **lint**: `ruff check .` (if used)
+- **test**: `pytest`
+- **build**: `TODO`
+MD
+    return 0
+  fi
+
+  cat <<'MD'
+- **typecheck**: `TODO`
+- **lint**: `TODO`
+- **test**: `TODO`
+- **build**: `TODO`
+MD
+}
+
+audit_project() {
+  local project_dir="$1"
+  local project_name
+  project_name="$(basename -- "${project_dir}")"
+  local stack
+  stack="$(detect_stack "${project_dir}")"
+
+  local is_git="no"
+  local branch="(n/a)"
+  if [[ -d "${project_dir}/.git" ]]; then
+    is_git="yes"
+    branch="$(git -C "${project_dir}" branch --show-current 2>/dev/null || true)"
+    [[ -n "${branch}" ]] || branch="(detached/unknown)"
+  fi
+
+  local has_claude_md="no"
+  [[ -f "${project_dir}/CLAUDE.md" || -f "${project_dir}/.claude/CLAUDE.md" ]] && has_claude_md="yes"
+
+  local has_settings="no"
+  [[ -f "${project_dir}/.claude/settings.json" ]] && has_settings="yes"
+
+  local has_agents="no"
+  [[ -d "${project_dir}/.claude/agents" ]] && has_agents="yes"
+
+  local has_commands="no"
+  [[ -d "${project_dir}/.claude/commands" ]] && has_commands="yes"
+
+  cat <<MD
+# Claude Code Showcase Audit: \`${project_name}\`
+
+- **Project**: \`${project_dir}\`
+- **Detected stack**: ${stack}
+- **Git repo**: ${is_git}
+- **Current branch**: \`${branch}\`
+
+## Readiness Checklist
+
+- **CLAUDE.md present**: ${has_claude_md}
+- **.claude/settings.json present**: ${has_settings}
+- **.claude/agents/ present**: ${has_agents}
+- **.claude/commands/ present**: ${has_commands}
+
+## Suggested Quality Gates (fill in exact commands)
+
+$(detect_quality_commands_md "${project_dir}")
+
+## Next Steps
+
+1. Ensure \`.claude/CLAUDE.md\` lists the exact repo commands for: typecheck → lint → test → build.
+2. Keep \`.claude/settings.json\` hooks minimal until you confirm performance + correctness.
+3. Add 1–3 skills under \`.claude/skills/\` for your most common patterns.
+
+MD
+}
+
+copy_template_file_no_overwrite() {
+  local src="$1"
+  local dst="$2"
+
+  if [[ -e "${dst}" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$(dirname -- "${dst}")"
+  # Preserve executable bit where applicable.
+  if [[ -x "${src}" ]]; then
+    install -m 0755 "${src}" "${dst}"
+  else
+    install -m 0644 "${src}" "${dst}"
+  fi
+}
+
+render_template_to_file_no_overwrite() {
+  local template_path="$1"
+  local dst="$2"
+  shift 2
+
+  if [[ -e "${dst}" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$(dirname -- "${dst}")"
+  python3 - "${template_path}" "${dst}" "$@" <<'PY'
+import os
+import sys
+from pathlib import Path
+
+template_path = Path(sys.argv[1])
+dst_path = Path(sys.argv[2])
+pairs = sys.argv[3:]
+if len(pairs) % 2 != 0:
+  raise SystemExit("expected even number of key/value args")
+
+repl = dict(zip(pairs[0::2], pairs[1::2]))
+content = template_path.read_text(encoding="utf-8")
+for k, v in repl.items():
+  content = content.replace(k, v)
+dst_path.write_text(content, encoding="utf-8")
+PY
+}
+
+apply_project() {
+  local project_dir="$1"
+  local abs_project_dir
+  abs_project_dir="$(abspath "${project_dir}")"
+
+  if [[ ! -d "${abs_project_dir}" ]]; then
+    echo "ccs: project dir does not exist: ${abs_project_dir}" >&2
+    exit 1
+  fi
+
+  local project_name
+  project_name="$(basename -- "${abs_project_dir}")"
+
+  # Copy everything except the generated CLAUDE.md (we render that).
+  while IFS= read -r -d '' src; do
+    local rel="${src#${TEMPLATES_DIR}/}"
+    if [[ "${rel}" == ".claude/CLAUDE.md.tmpl" ]]; then
+      continue
+    fi
+    local dst="${abs_project_dir}/${rel}"
+    copy_template_file_no_overwrite "${src}" "${dst}"
+  done < <(find "${TEMPLATES_DIR}" -type f -print0)
+
+  local stack
+  stack="$(detect_stack "${abs_project_dir}")"
+
+  local quality_md
+  quality_md="$(detect_quality_commands_md "${abs_project_dir}")"
+
+  render_template_to_file_no_overwrite \
+    "${TEMPLATES_DIR}/.claude/CLAUDE.md.tmpl" \
+    "${abs_project_dir}/.claude/CLAUDE.md" \
+    "{{PROJECT_NAME}}" "${project_name}" \
+    "{{STACK}}" "${stack}" \
+    "{{QUALITY_GATES_MD}}" "${quality_md}"
+
+  mkdir -p "${abs_project_dir}/.claude"
+  audit_project "${abs_project_dir}" > "${abs_project_dir}/.claude/ccs-audit.md"
+  echo "ccs: wrote ${abs_project_dir}/.claude/ccs-audit.md" >&2
+}
+
+main() {
+  require_cmd bash
+  require_cmd git
+  require_cmd python3
+
+  if [[ $# -lt 1 ]]; then
+    usage
+    exit 1
+  fi
+
+  local cmd="$1"
+  shift
+
+  case "${cmd}" in
+    -h|--help|help)
+      usage
+      ;;
+    audit)
+      if [[ $# -lt 1 ]]; then
+        usage
+        exit 1
+      fi
+      local project_dir
+      project_dir="$(abspath "$1")"
+      shift
+      local output=""
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --output)
+            output="${2:-}"
+            shift 2
+            ;;
+          *)
+            echo "ccs: unknown arg: $1" >&2
+            exit 1
+            ;;
+        esac
+      done
+      if [[ -n "${output}" ]]; then
+        audit_project "${project_dir}" > "${output}"
+        echo "ccs: wrote ${output}" >&2
+      else
+        audit_project "${project_dir}"
+      fi
+      ;;
+    apply)
+      if [[ $# -lt 1 ]]; then
+        usage
+        exit 1
+      fi
+      apply_project "$1"
+      ;;
+    *)
+      echo "ccs: unknown command: ${cmd}" >&2
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
