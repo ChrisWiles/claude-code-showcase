@@ -31,7 +31,12 @@ abspath() {
     printf '%s\n' "${p}"
     return 0
   fi
-  printf '%s\n' "$(cd -- "${p%/*:-.}" && pwd -P)/${p##*/}"
+  local dir="${p%/*}"
+  local base="${p##*/}"
+  if [[ "${dir}" == "${p}" ]]; then
+    dir="."
+  fi
+  printf '%s\n' "$(cd -- "${dir}" && pwd -P)/${base}"
 }
 
 detect_stack() {
