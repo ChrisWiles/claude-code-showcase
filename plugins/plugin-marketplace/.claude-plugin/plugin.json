@@ -1,0 +1,7 @@
+{
+  "name": "plugin-marketplace",
+  "version": "1.0.0",
+  "description": "Create a Claude Code plugin marketplace from existing skills, commands, agents, and hooks using symlinks. Use when converting a showcase repo to an installable marketplace.",
+  "keywords": ["marketplace", "plugins", "symlinks", "distribution"],
+  "skills": "./skills/"
+}

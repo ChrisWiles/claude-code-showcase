@@ -1,0 +1,7 @@
+{
+  "name": "formik-patterns",
+  "version": "1.0.0",
+  "description": "Formik form handling with validation patterns. Use when building forms, implementing validation, or handling form submission.",
+  "keywords": ["formik", "forms", "validation", "react"],
+  "skills": "./skills/"
+}

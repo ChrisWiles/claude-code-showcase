@@ -1,0 +1,7 @@
+{
+  "name": "testing-patterns",
+  "version": "1.0.0",
+  "description": "Jest testing patterns, factory functions, mocking strategies, and TDD workflow. Use when writing unit tests, creating test factories, or following TDD red-green-refactor cycle.",
+  "keywords": ["testing", "jest", "tdd", "mocking", "factory-pattern"],
+  "skills": "./skills/"
+}

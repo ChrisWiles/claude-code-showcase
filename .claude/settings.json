@@ -1,10 +1,10 @@
 {
-  "includeCoAuthoredBy": true,
   "env": {
     "INSIDE_CLAUDE_CODE": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "420000",
     "BASH_MAX_TIMEOUT_MS": "420000"
   },
+  "includeCoAuthoredBy": true,
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -71,5 +71,11 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true
   }
 }

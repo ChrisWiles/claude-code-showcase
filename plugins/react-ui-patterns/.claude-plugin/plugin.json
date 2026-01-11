@@ -1,0 +1,7 @@
+{
+  "name": "react-ui-patterns",
+  "version": "1.0.0",
+  "description": "Modern React UI patterns for loading states, error handling, and data fetching. Use when building UI components, handling async data, or managing UI states.",
+  "keywords": ["react", "ui", "loading-states", "error-handling", "hooks"],
+  "skills": "./skills/"
+}

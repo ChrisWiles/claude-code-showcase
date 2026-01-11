@@ -1,19 +1,56 @@
-name: Scheduled - Code Quality Review
+name: Showcase - Node.js Code Quality Review
 
 on:
-  schedule:
-    # Run every Sunday at 8 AM UTC
-    - cron: '0 8 * * 0'
-  workflow_dispatch:
+  workflow_call:
     inputs:
+      model:
+        description: 'Claude model to use'
+        required: false
+        type: string
+        default: 'opus'
+      timeout_minutes:
+        description: 'Timeout in minutes per directory'
+        required: false
+        type: number
+        default: 45
       num_dirs:
         description: 'Number of random directories to review'
         required: false
-        default: '3'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.run_id }}
-  cancel-in-progress: false
+        type: number
+        default: 3
+      source_dir:
+        description: 'Source directory to search for code'
+        required: false
+        type: string
+        default: 'src'
+      base_branch:
+        description: 'Base branch for PRs'
+        required: false
+        type: string
+        default: 'main'
+      file_extensions:
+        description: 'File extensions to review (space-separated)'
+        required: false
+        type: string
+        default: '.ts .tsx'
+      lint_command:
+        description: 'Lint command to verify changes'
+        required: false
+        type: string
+        default: 'npm run lint'
+      review_checklist_path:
+        description: 'Path to code review checklist (optional)'
+        required: false
+        type: string
+        default: '.claude/agents/code-reviewer.md'
+      custom_prompt:
+        description: 'Custom review prompt (optional)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
 
 permissions:
   contents: write
@@ -32,13 +69,27 @@ jobs:
       - name: Select random directories
         id: select
         run: |
-          NUM_DIRS="${{ github.event.inputs.num_dirs || '3' }}"
+          NUM_DIRS="${{ inputs.num_dirs }}"
+          SOURCE_DIR="${{ inputs.source_dir }}"
+          EXTENSIONS="${{ inputs.file_extensions }}"
 
-          # Find directories in src that have TypeScript files
-          DIRS=$(find src -type d -exec sh -c 'ls "$1"/*.ts "$1"/*.tsx 2>/dev/null | grep -v -E "\.(test|spec|stories)\." | head -1' _ {} \; 2>/dev/null | \
-            xargs -I {} dirname {} | \
-            sort -u | \
-            shuf -n "$NUM_DIRS")
+          # Find directories with matching files (excluding tests)
+          # Build ls pattern by converting ".ts .tsx" to "*.ts *.tsx"
+          LS_PATTERNS=""
+          for ext in $EXTENSIONS; do
+            LS_PATTERNS="$LS_PATTERNS *$ext"
+          done
+
+          # Find directories containing files with any of the extensions
+          DIRS=$(find "$SOURCE_DIR" -type d 2>/dev/null | while read -r dir; do
+            # Check if directory has matching files (excluding test files)
+            for ext in $EXTENSIONS; do
+              if ls "$dir"/*"$ext" 2>/dev/null | grep -qvE '\.(test|spec|stories)\.'; then
+                echo "$dir"
+                break
+              fi
+            done
+          done | sort -u | shuf -n "$NUM_DIRS")
 
           if [ -z "$DIRS" ]; then
             echo "No suitable directories found"
@@ -87,26 +138,27 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          model: claude-opus-4-5-20251101
-          timeout_minutes: 45
-          base_branch: main
+          model: ${{ inputs.model }}
+          timeout_minutes: ${{ inputs.timeout_minutes }}
+          base_branch: ${{ inputs.base_branch }}
           branch_prefix: claude/code-quality-
           max_turns: 35
-          allowed_tools: "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm run lint*)"
+          allowed_tools: "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(${{ inputs.lint_command }}*)"
           direct_prompt: |
-            # Weekly Code Quality Review
+            ${{ inputs.custom_prompt != '' && inputs.custom_prompt || format('
+            # Code Quality Review
 
-            You are performing a scheduled code quality review of a specific directory.
+            You are performing a code quality review of a specific directory.
 
             ## Target Directory
-            **Review: `${{ matrix.directory }}`**
+            **Review: `{0}`**
 
             ## Your Tasks
 
-            1. **Read the code review standards**: Read `.claude/agents/code-reviewer.md` for the full checklist
+            1. **Read the code review standards**: If `{1}` exists, read it for the full checklist
 
             2. **Analyze all files in the directory**:
-               - List all .ts and .tsx files (excluding .test., .spec., .stories.)
+               - List all code files (excluding .test., .spec., .stories.)
                - Read each file thoroughly
                - Apply the review checklist
 
@@ -119,25 +171,26 @@ jobs:
                - Performance problems
 
             4. **Make the fixes yourself**:
-               - Don't just report issues - FIX THEM
+               - Do not just report issues - FIX THEM
                - Use Edit tool to update files
-               - Ensure fixes don't break anything
+               - Ensure fixes do not break anything
 
             5. **Run verification**:
-               - `npm run lint` - verify no lint errors introduced
+               - Run `{2}` - verify no lint errors introduced
                - If errors occur, fix them or revert changes
 
             6. **Create PR if fixes were made**:
-               - Create a branch from main
+               - Create a branch from {3}
                - Commit all fixes with descriptive message
-               - PR title: "fix(${{ matrix.directory }}): code quality improvements"
+               - PR title: "fix({0}): code quality improvements"
                - PR body should list fixes applied
 
             ## Guidelines
             - Be thorough but focused on this directory only
             - Fix issues that are clear improvements
-            - Don't refactor working code just for style
+            - Do not refactor working code just for style
             - If no issues found, report that and skip PR creation
+            ', matrix.directory, inputs.review_checklist_path, inputs.lint_command, inputs.base_branch) }}
 
   report-completion:
     needs: [select-directories, review-directory]

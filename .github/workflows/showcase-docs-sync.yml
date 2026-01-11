@@ -1,0 +1,152 @@
+name: Showcase - Claude Documentation Sync
+
+on:
+  workflow_call:
+    inputs:
+      model:
+        description: 'Claude model to use'
+        required: false
+        type: string
+        default: 'opus'
+      timeout_minutes:
+        description: 'Timeout in minutes'
+        required: false
+        type: number
+        default: 60
+      days_back:
+        description: 'Number of days to look back for changes'
+        required: false
+        type: number
+        default: 30
+      base_branch:
+        description: 'Base branch for PRs'
+        required: false
+        type: string
+        default: 'main'
+      code_patterns:
+        description: 'File patterns to check for changes (space-separated globs)'
+        required: false
+        type: string
+        default: '*.ts *.tsx *.js *.jsx'
+      docs_paths:
+        description: 'Documentation paths to update (space-separated)'
+        required: false
+        type: string
+        default: 'docs/ README.md'
+      custom_prompt:
+        description: 'Custom prompt (optional, uses default if not provided)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  docs-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for code changes in period
+        id: check-changes
+        run: |
+          DAYS_BACK="${{ inputs.days_back }}"
+          SINCE_DATE=$(date -d "-${DAYS_BACK} days" +%Y-%m-%d)
+
+          echo "Checking for changes since: $SINCE_DATE"
+
+          # Build glob patterns for git log
+          PATTERNS="${{ inputs.code_patterns }}"
+          GIT_ARGS=""
+          for pattern in $PATTERNS; do
+            GIT_ARGS="$GIT_ARGS $pattern"
+          done
+
+          # Get changed code files (excluding tests)
+          CHANGED_FILES=$(git log --since="$SINCE_DATE" --name-only --pretty=format: -- \
+            $GIT_ARGS \
+            ':!*.test.*' ':!*.spec.*' ':!*.stories.*' \
+            | sort -u | grep -v '^$' | head -100)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No code changes found in the last $DAYS_BACK days"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Found $(echo "$CHANGED_FILES" | wc -l) changed files"
+          fi
+
+          echo "since_date=$SINCE_DATE" >> $GITHUB_OUTPUT
+
+      - name: Claude Documentation Sync
+        if: steps.check-changes.outputs.has_changes == 'true'
+        uses: anthropics/claude-code-action@beta
+        env:
+          SINCE_DATE: ${{ steps.check-changes.outputs.since_date }}
+          CHANGED_FILES: ${{ steps.check-changes.outputs.changed_files }}
+          DOCS_PATHS: ${{ inputs.docs_paths }}
+          BASE_BRANCH: ${{ inputs.base_branch }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: ${{ inputs.model }}
+          timeout_minutes: ${{ inputs.timeout_minutes }}
+          base_branch: ${{ inputs.base_branch }}
+          branch_prefix: claude/docs-sync-
+          max_turns: 30
+          allowed_tools: "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*)"
+          direct_prompt: ${{ inputs.custom_prompt != '' && inputs.custom_prompt || '
+            # Documentation Sync
+
+            You are running a documentation sync. Check the environment variables for context:
+            - SINCE_DATE: Date to check changes from
+            - CHANGED_FILES: List of modified code files
+            - DOCS_PATHS: Documentation paths to update
+            - BASE_BRANCH: Branch to create PRs against
+
+            ## Your Tasks
+
+            1. **Read the changed files list** from the CHANGED_FILES environment variable
+
+            2. **Analyze Changes**: Review the changed files to understand what functionality was added, modified, or removed.
+
+            3. **Find Related Documentation**: Search for documentation in the paths specified by DOCS_PATHS.
+
+            4. **Check for Actual Problems**: For each code change, determine if existing docs are now WRONG:
+               - Do code examples still work?
+               - Are API signatures/types now incorrect?
+               - Are prop interfaces outdated?
+
+            5. **Fix Only What is Broken**: If you find documentation that is actually wrong:
+               - Fix incorrect code examples
+               - Update wrong API signatures and types
+               - Add docs ONLY for significant new features that have zero documentation
+
+            6. **Create a PR**: If you made any changes:
+               - Create a new branch from the BASE_BRANCH
+               - Commit all documentation updates
+               - Create a PR with a summary of what was fixed
+
+            ## CRITICAL Guidelines
+            - Documentation is a LIVING DOCUMENT - only fix things that are actually WRONG
+            - DO NOT add changelog-style entries
+            - ONLY update docs when they are incorrect or misleading
+            - If no problems are found, report that and DO NOT create a PR
+            ' }}
+
+      - name: Report no changes
+        if: steps.check-changes.outputs.has_changes == 'false'
+        run: |
+          echo "No code changes found in the last ${{ inputs.days_back }} days."
+          echo "Skipping documentation sync."

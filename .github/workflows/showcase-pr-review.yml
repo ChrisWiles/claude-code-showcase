@@ -1,14 +1,26 @@
-name: PR - Claude Code Review
+name: Showcase - Claude PR Review
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  issue_comment:
-    types: [created]
-
-concurrency:
-  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number || github.event.issue.number }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      model:
+        description: 'Claude model to use'
+        required: false
+        type: string
+        default: 'opus'
+      timeout_minutes:
+        description: 'Timeout in minutes'
+        required: false
+        type: number
+        default: 30
+      review_prompt:
+        description: 'Custom review prompt (optional, uses default if not provided)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
 
 permissions:
   contents: read
@@ -61,14 +73,22 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          model: claude-opus-4-5-20251101
-          timeout_minutes: 30
+          model: ${{ inputs.model }}
+          timeout_minutes: ${{ inputs.timeout_minutes }}
           max_turns: 10
           allowed_tools: "Read,Glob,Grep,Bash(git:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           direct_prompt: |
-            Review this Pull Request using the standards in .claude/agents/code-reviewer.md
+            ${{ inputs.review_prompt != '' && inputs.review_prompt || format('
+            Review this Pull Request thoroughly.
 
-            1. Read .claude/agents/code-reviewer.md for the full checklist
-            2. Run `git diff origin/${{ steps.pr-info.outputs.base_ref }}...HEAD` to see changes
-            3. Apply the review checklist to modified files
+            1. Run `git diff origin/{0}...HEAD` to see all changes
+            2. Analyze the code for:
+               - Correctness and potential bugs
+               - TypeScript type safety (no `any` types)
+               - Error handling
+               - Security issues
+               - Performance concerns
+               - Code style and readability
+            3. If a .claude/agents/code-reviewer.md exists, use it as the review checklist
             4. Provide feedback organized by severity (Critical, Warning, Suggestion)
+            ', steps.pr-info.outputs.base_ref) }}

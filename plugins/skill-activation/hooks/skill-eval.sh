@@ -1,0 +1,1 @@
+../../../.claude/hooks/skill-eval.sh

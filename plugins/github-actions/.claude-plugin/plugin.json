@@ -1,0 +1,8 @@
+{
+  "name": "github-actions",
+  "version": "1.0.0",
+  "description": "Showcase GitHub Actions workflows for Claude Code CI/CD automation. Includes PR review, docs sync, code quality, and dependency audit workflows.",
+  "keywords": ["github-actions", "ci-cd", "workflows", "automation", "pr-review", "code-quality"],
+  "skills": "./skills/",
+  "commands": "./commands/"
+}

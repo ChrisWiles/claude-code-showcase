@@ -1,0 +1,7 @@
+{
+  "name": "skill-activation",
+  "version": "1.0.0",
+  "description": "Intelligent skill suggestion system. Analyzes prompts and suggests relevant skills based on keywords, patterns, and file paths.",
+  "keywords": ["skills", "automation", "hooks", "suggestions"],
+  "hooks": "./hooks/hooks.json"
+}

@@ -1,14 +1,46 @@
-name: Scheduled - Dependency Audit
+name: Showcase - Node.js Dependency Audit
 
 on:
-  schedule:
-    # Run every 2 weeks (1st and 15th of each month) at 10 AM UTC
-    - cron: '0 10 1,15 * *'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      model:
+        description: 'Claude model to use'
+        required: false
+        type: string
+        default: 'opus'
+      timeout_minutes:
+        description: 'Timeout in minutes'
+        required: false
+        type: number
+        default: 45
+      base_branch:
+        description: 'Base branch for PRs'
+        required: false
+        type: string
+        default: 'main'
+      node_version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+      lint_command:
+        description: 'Lint command to verify changes'
+        required: false
+        type: string
+        default: 'npm run lint'
+      test_command:
+        description: 'Test command to verify changes'
+        required: false
+        type: string
+        default: 'npm test'
+      custom_prompt:
+        description: 'Custom audit prompt (optional)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
 
 permissions:
   contents: write
@@ -27,7 +59,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ inputs.node_version }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -67,16 +99,17 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          model: claude-opus-4-5-20251101
-          timeout_minutes: 45
-          base_branch: main
+          model: ${{ inputs.model }}
+          timeout_minutes: ${{ inputs.timeout_minutes }}
+          base_branch: ${{ inputs.base_branch }}
           branch_prefix: claude/deps-update-
           max_turns: 40
           allowed_tools: "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm:*)"
           direct_prompt: |
+            ${{ inputs.custom_prompt != '' && inputs.custom_prompt || format('
             # Dependency Audit
 
-            You are running a scheduled dependency audit.
+            You are running a dependency audit.
 
             ## Your Tasks
 
@@ -85,28 +118,29 @@ jobs:
             2. **Analyze security vulnerabilities**: Run `npm audit` and review results
 
             3. **Update packages safely**:
-               - Use `npm update {package}` for minor/patch updates
-               - For major versions, use `npm install {package}@latest` only if safe
+               - Use `npm update package-name` for minor/patch updates
+               - For major versions, use `npm install package-name@latest` only if safe
                - Run `npm audit fix` for security fixes
 
             4. **Verify updates**:
-               - Run `npm run lint` to check for issues
-               - Run `npm test` to verify tests pass
+               - Run `{0}` to check for lint issues
+               - Run `{1}` to verify tests pass
                - If anything fails, revert that specific update
 
             5. **Create PR** if any updates were made:
-               - Create branch from main
+               - Create branch from {2}
                - Commit package.json and package-lock.json changes
                - PR title: "chore(deps): update dependencies"
                - PR body should list:
-                 - Each package updated with old → new version
+                 - Each package updated with old to new version
                  - Security vulnerabilities fixed (if any)
 
             ## Guidelines
-            - Be CONSERVATIVE - when in doubt, don't update
+            - Be CONSERVATIVE - when in doubt, do not update
             - If tests fail after an update, revert that update
             - Group related updates together
-            - If NO updates are possible, report that and don't create a PR
+            - If NO updates are possible, report that and do not create a PR
+            ', inputs.lint_command, inputs.test_command, inputs.base_branch) }}
 
       - name: Report no updates needed
         if: steps.check-outdated.outputs.has_outdated == 'false' && steps.security-audit.outputs.vulnerabilities == '0'

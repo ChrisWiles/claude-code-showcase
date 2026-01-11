@@ -18,6 +18,7 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   docs-sync:
@@ -64,8 +65,9 @@ jobs:
           timeout_minutes: 60
           base_branch: main
           branch_prefix: claude/docs-sync-
-          track_progress: true
-          prompt: |
+          max_turns: 30
+          allowed_tools: "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*)"
+          direct_prompt: |
             # Monthly Documentation Sync
 
             You are running a scheduled documentation sync. Code has changed since ${{ steps.check-changes.outputs.since_date }}.
@@ -105,9 +107,6 @@ jobs:
             - DO NOT add changelog-style entries
             - ONLY update docs when they are incorrect or misleading
             - If no problems are found, report that and DO NOT create a PR
-          claude_args: |
-            --max-turns 30
-            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*)"
 
       - name: Report no changes
         if: steps.check-changes.outputs.has_changes == 'false'

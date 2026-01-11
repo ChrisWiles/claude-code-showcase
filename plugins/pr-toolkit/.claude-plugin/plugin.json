@@ -1,0 +1,8 @@
+{
+  "name": "pr-toolkit",
+  "version": "1.0.0",
+  "description": "Complete PR workflow toolkit with review commands and git workflow agent. Includes /pr-review, /pr-summary commands and github-workflow agent.",
+  "keywords": ["pr", "pull-request", "github", "git", "review"],
+  "commands": "./commands/",
+  "agents": "./agents/"
+}

@@ -1,0 +1,1 @@
+../../../.claude/commands/setup-github-actions.md
