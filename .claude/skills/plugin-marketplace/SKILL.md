@@ -199,3 +199,167 @@ When updating a plugin version:
 1. Update version in `.claude-plugin/marketplace.json`
 2. Update version in `plugins/{name}/.claude-plugin/plugin.json`
 3. Source content updates flow automatically via symlinks
+
+## Auditing Atoms Coverage
+
+"Atoms" are the fundamental units in Claude Code: **skills**, **commands**, **agents**, and **hooks**. Use this audit process to ensure all atoms in your `.claude/` directory are exposed as installable plugins.
+
+### Audit Script
+
+Create `scripts/audit-atoms.sh` to check coverage:
+
+```bash
+#!/bin/bash
+# Audits whether all atoms in .claude/ are exposed in plugins/
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+
+echo "=== Atom Coverage Audit ==="
+echo ""
+
+missing=0
+
+# Audit Skills
+echo "Skills:"
+for skill_dir in "$REPO_ROOT"/.claude/skills/*/; do
+  skill_name=$(basename "$skill_dir")
+  [ "$skill_name" = "README.md" ] && continue
+
+  # Check if this skill is symlinked in any plugin
+  found=$(find "$REPO_ROOT/plugins" -type l -name "$skill_name" 2>/dev/null | head -1)
+  if [ -n "$found" ]; then
+    echo "  ✓ $skill_name"
+  else
+    echo "  ✗ $skill_name (NOT IN ANY PLUGIN)"
+    missing=$((missing + 1))
+  fi
+done
+
+echo ""
+
+# Audit Commands
+echo "Commands:"
+for cmd_file in "$REPO_ROOT"/.claude/commands/*.md; do
+  cmd_name=$(basename "$cmd_file")
+
+  found=$(find "$REPO_ROOT/plugins" -type l -name "$cmd_name" 2>/dev/null | head -1)
+  if [ -n "$found" ]; then
+    echo "  ✓ $cmd_name"
+  else
+    echo "  ✗ $cmd_name (NOT IN ANY PLUGIN)"
+    missing=$((missing + 1))
+  fi
+done
+
+echo ""
+
+# Audit Agents
+echo "Agents:"
+for agent_file in "$REPO_ROOT"/.claude/agents/*.md; do
+  agent_name=$(basename "$agent_file")
+
+  found=$(find "$REPO_ROOT/plugins" -type l -name "$agent_name" 2>/dev/null | head -1)
+  if [ -n "$found" ]; then
+    echo "  ✓ $agent_name"
+  else
+    echo "  ✗ $agent_name (NOT IN ANY PLUGIN)"
+    missing=$((missing + 1))
+  fi
+done
+
+echo ""
+
+# Audit Hooks (check for any hook files)
+echo "Hooks:"
+hook_files=$(find "$REPO_ROOT"/.claude/hooks -type f \( -name "*.sh" -o -name "*.js" -o -name "*.json" \) 2>/dev/null)
+if [ -n "$hook_files" ]; then
+  hooks_in_plugin=$(find "$REPO_ROOT/plugins" -path "*/hooks/*" -type l 2>/dev/null | head -1)
+  if [ -n "$hooks_in_plugin" ]; then
+    echo "  ✓ Hook system exposed in plugins"
+  else
+    echo "  ✗ Hook system NOT exposed in plugins"
+    missing=$((missing + 1))
+  fi
+fi
+
+echo ""
+echo "=== Summary ==="
+if [ $missing -eq 0 ]; then
+  echo "All atoms are exposed in plugins!"
+  exit 0
+else
+  echo "$missing atom(s) missing from plugins"
+  exit 1
+fi
+```
+
+### Running the Audit
+
+```bash
+chmod +x scripts/audit-atoms.sh
+./scripts/audit-atoms.sh
+```
+
+Example output:
+```
+=== Atom Coverage Audit ===
+
+Skills:
+  ✓ testing-patterns
+  ✓ react-ui-patterns
+  ✗ new-skill (NOT IN ANY PLUGIN)
+
+Commands:
+  ✓ pr-review.md
+  ✓ ticket.md
+
+Agents:
+  ✓ code-reviewer.md
+
+Hooks:
+  ✓ Hook system exposed in plugins
+
+=== Summary ===
+1 atom(s) missing from plugins
+```
+
+### Integrating with CI
+
+Add to your GitHub Actions workflow:
+
+```yaml
+- name: Audit atom coverage
+  run: ./scripts/audit-atoms.sh
+```
+
+### Quick Manual Check
+
+To quickly see what's in `.claude/` vs what's symlinked:
+
+```bash
+# List all atoms in .claude/
+echo "=== Skills ===" && ls .claude/skills/
+echo "=== Commands ===" && ls .claude/commands/
+echo "=== Agents ===" && ls .claude/agents/
+echo "=== Hooks ===" && ls .claude/hooks/
+
+# List all symlinks in plugins/
+find plugins -type l | sort
+```
+
+### When Atoms Are Missing
+
+If the audit finds missing atoms:
+
+1. **Decide on packaging**: Should it be standalone or bundled?
+2. **Create the plugin structure**:
+   ```bash
+   mkdir -p plugins/new-skill/{.claude-plugin,skills}
+   ln -s ../../../.claude/skills/new-skill plugins/new-skill/skills/new-skill
+   ```
+3. **Add plugin.json manifest**
+4. **Update marketplace.json**
+5. **Re-run the audit** to verify
