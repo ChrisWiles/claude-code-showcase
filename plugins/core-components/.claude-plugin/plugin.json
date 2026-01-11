@@ -1,0 +1,7 @@
+{
+  "name": "core-components",
+  "version": "1.0.0",
+  "description": "Core component library and design system patterns. Use when building UI, using design tokens, or working with the component library.",
+  "keywords": ["components", "design-system", "tokens", "ui-library"],
+  "skills": "./skills/"
+}

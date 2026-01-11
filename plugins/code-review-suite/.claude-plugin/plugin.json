@@ -1,0 +1,8 @@
+{
+  "name": "code-review-suite",
+  "version": "1.0.0",
+  "description": "Comprehensive code review with quality checks. Includes code-reviewer agent and /code-quality command.",
+  "keywords": ["code-review", "quality", "linting", "standards"],
+  "commands": "./commands/",
+  "agents": "./agents/"
+}

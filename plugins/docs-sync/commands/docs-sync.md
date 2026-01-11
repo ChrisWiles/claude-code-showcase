@@ -1,0 +1,1 @@
+../../../.claude/commands/docs-sync.md

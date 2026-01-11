@@ -1,0 +1,7 @@
+{
+  "name": "ticket-workflow",
+  "version": "1.0.0",
+  "description": "End-to-end ticket workflow for JIRA/Linear integration. Read tickets, implement features, update status. Includes /ticket and /onboard commands.",
+  "keywords": ["jira", "linear", "tickets", "workflow", "onboarding"],
+  "commands": "./commands/"
+}

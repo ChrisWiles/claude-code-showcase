@@ -1,0 +1,7 @@
+{
+  "name": "systematic-debugging",
+  "version": "1.0.0",
+  "description": "Four-phase debugging methodology with root cause analysis. Use when investigating bugs, fixing test failures, or troubleshooting unexpected behavior.",
+  "keywords": ["debugging", "troubleshooting", "root-cause", "bug-fix"],
+  "skills": "./skills/"
+}

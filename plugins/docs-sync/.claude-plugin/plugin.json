@@ -1,0 +1,7 @@
+{
+  "name": "docs-sync",
+  "version": "1.0.0",
+  "description": "Documentation synchronization command. Ensures docs stay aligned with code changes.",
+  "keywords": ["documentation", "docs", "sync", "maintenance"],
+  "commands": "./commands/"
+}

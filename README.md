@@ -45,6 +45,60 @@ We even use Claude Code for ticket triage. It reads the ticket, digs into the co
 - [GitHub Actions Workflows](#github-actions-workflows)
 - [Best Practices](#best-practices)
 - [Examples in This Repository](#examples-in-this-repository)
+- [Plugin Marketplace](#plugin-marketplace)
+
+---
+
+## Plugin Marketplace
+
+This repository is also a **Claude Code plugin marketplace**. You can install individual components directly into your projects.
+
+### Quick Install
+
+```bash
+# Add this marketplace to Claude Code
+/plugin marketplace add aviadr1/claude-code-showcase
+
+# Browse available plugins
+/plugin
+
+# Install specific plugins
+/plugin install testing-patterns@claude-code-showcase
+/plugin install code-review-suite@claude-code-showcase
+/plugin install pr-toolkit@claude-code-showcase
+```
+
+### Available Plugins
+
+| Plugin | Type | Description |
+|--------|------|-------------|
+| `testing-patterns` | Skill | Jest testing, factory functions, TDD workflow |
+| `systematic-debugging` | Skill | Four-phase debugging methodology |
+| `react-ui-patterns` | Skill | Loading states, error handling, data fetching |
+| `formik-patterns` | Skill | Form handling and validation |
+| `graphql-schema` | Skill | GraphQL queries, mutations, codegen |
+| `core-components` | Skill | Design system and component library |
+| `pr-toolkit` | Bundle | `/pr-review`, `/pr-summary` + github-workflow agent |
+| `code-review-suite` | Bundle | code-reviewer agent + `/code-quality` command |
+| `ticket-workflow` | Bundle | `/ticket` + `/onboard` commands |
+| `docs-sync` | Command | Documentation synchronization |
+| `skill-activation` | Hook | Intelligent skill suggestions |
+
+### Architecture
+
+This marketplace uses **symlinks** to maintain a single source of truth:
+
+```
+.claude/                    # Source of truth (showcase)
+├── skills/testing-patterns/
+└── commands/pr-review.md
+
+plugins/                    # Plugin packages (symlinks)
+└── testing-patterns/
+    └── skills/testing-patterns/  → symlink to .claude/skills/testing-patterns
+```
+
+Updates to `.claude/` automatically flow to the plugins. See the [plugin-marketplace skill](.claude/skills/plugin-marketplace/SKILL.md) for details on this pattern.
 
 ---
 

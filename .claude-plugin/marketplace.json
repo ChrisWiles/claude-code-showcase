@@ -1,0 +1,87 @@
+{
+  "name": "claude-code-showcase",
+  "description": "A curated collection of Claude Code skills, commands, agents, and automation hooks. Production-ready patterns for React, TypeScript, testing, and CI/CD workflows.",
+  "owner": {
+    "name": "aviadr1",
+    "url": "https://github.com/aviadr1/claude-code-showcase"
+  },
+  "plugins": [
+    {
+      "name": "testing-patterns",
+      "source": "./plugins/testing-patterns",
+      "description": "Jest testing patterns, factory functions, mocking strategies, and TDD workflow.",
+      "version": "1.0.0",
+      "keywords": ["testing", "jest", "tdd", "mocking"]
+    },
+    {
+      "name": "systematic-debugging",
+      "source": "./plugins/systematic-debugging",
+      "description": "Four-phase debugging methodology with root cause analysis.",
+      "version": "1.0.0",
+      "keywords": ["debugging", "troubleshooting", "root-cause"]
+    },
+    {
+      "name": "react-ui-patterns",
+      "source": "./plugins/react-ui-patterns",
+      "description": "Modern React UI patterns for loading states, error handling, and data fetching.",
+      "version": "1.0.0",
+      "keywords": ["react", "ui", "loading-states", "hooks"]
+    },
+    {
+      "name": "formik-patterns",
+      "source": "./plugins/formik-patterns",
+      "description": "Formik form handling with validation patterns.",
+      "version": "1.0.0",
+      "keywords": ["formik", "forms", "validation"]
+    },
+    {
+      "name": "graphql-schema",
+      "source": "./plugins/graphql-schema",
+      "description": "GraphQL queries, mutations, and code generation patterns.",
+      "version": "1.0.0",
+      "keywords": ["graphql", "apollo", "codegen"]
+    },
+    {
+      "name": "core-components",
+      "source": "./plugins/core-components",
+      "description": "Core component library and design system patterns.",
+      "version": "1.0.0",
+      "keywords": ["components", "design-system", "tokens"]
+    },
+    {
+      "name": "pr-toolkit",
+      "source": "./plugins/pr-toolkit",
+      "description": "Complete PR workflow toolkit with review commands and git workflow agent.",
+      "version": "1.0.0",
+      "keywords": ["pr", "github", "git", "review"]
+    },
+    {
+      "name": "code-review-suite",
+      "source": "./plugins/code-review-suite",
+      "description": "Comprehensive code review with quality checks agent and command.",
+      "version": "1.0.0",
+      "keywords": ["code-review", "quality", "linting"]
+    },
+    {
+      "name": "ticket-workflow",
+      "source": "./plugins/ticket-workflow",
+      "description": "End-to-end ticket workflow for JIRA/Linear integration.",
+      "version": "1.0.0",
+      "keywords": ["jira", "linear", "tickets", "workflow"]
+    },
+    {
+      "name": "docs-sync",
+      "source": "./plugins/docs-sync",
+      "description": "Documentation synchronization command.",
+      "version": "1.0.0",
+      "keywords": ["documentation", "docs", "sync"]
+    },
+    {
+      "name": "skill-activation",
+      "source": "./plugins/skill-activation",
+      "description": "Intelligent skill suggestion system based on prompt analysis.",
+      "version": "1.0.0",
+      "keywords": ["skills", "automation", "hooks"]
+    }
+  ]
+}

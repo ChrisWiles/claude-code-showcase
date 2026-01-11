@@ -1,0 +1,7 @@
+{
+  "name": "graphql-schema",
+  "version": "1.0.0",
+  "description": "GraphQL queries, mutations, and code generation patterns. Use when creating GraphQL operations, working with Apollo Client, or generating types.",
+  "keywords": ["graphql", "apollo", "queries", "mutations", "codegen"],
+  "skills": "./skills/"
+}
