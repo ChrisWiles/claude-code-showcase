@@ -363,3 +363,181 @@ If the audit finds missing atoms:
 3. **Add plugin.json manifest**
 4. **Update marketplace.json**
 5. **Re-run the audit** to verify
+
+## Content Change Tracking with Git
+
+Use git to detect which atoms have changed since the last release. This is simpler and more reliable than maintaining separate checksum files.
+
+### Version Tagging Strategy
+
+Tag releases to mark version boundaries:
+
+```bash
+# Tag a marketplace release
+git tag -a v1.0.0 -m "Initial marketplace release"
+
+# Tag individual plugin releases (optional, for granular tracking)
+git tag -a testing-patterns/v1.0.0 -m "testing-patterns v1.0.0"
+```
+
+### Check Changes Since Last Release
+
+Create `scripts/check-atom-changes.sh`:
+
+```bash
+#!/bin/bash
+# Detects which atoms have changed since the last release tag
+# Usage: ./scripts/check-atom-changes.sh [base-ref]
+#   base-ref: git ref to compare against (default: latest tag)
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Get base reference (default to latest tag)
+BASE_REF="${1:-$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")}"
+
+echo "=== Atom Changes Since $BASE_REF ==="
+echo ""
+
+changes=0
+
+check_changes() {
+  local atom_type="$1"
+  local atom_path="$2"
+  local atom_name="$3"
+
+  # Check if path has changes since base ref
+  if git diff --quiet "$BASE_REF" -- "$atom_path" 2>/dev/null; then
+    echo "  ✓ $atom_name (unchanged)"
+  else
+    echo "  CHANGED: $atom_name"
+    # Show brief summary of changes
+    local lines_changed=$(git diff --stat "$BASE_REF" -- "$atom_path" 2>/dev/null | tail -1)
+    [ -n "$lines_changed" ] && echo "    $lines_changed"
+    changes=$((changes + 1))
+  fi
+}
+
+# Check skills
+echo "Skills:"
+for skill_dir in "$REPO_ROOT"/.claude/skills/*/; do
+  [ ! -d "$skill_dir" ] && continue
+  skill_name=$(basename "$skill_dir")
+  check_changes "skill" "$skill_dir" "$skill_name"
+done
+
+echo ""
+
+# Check commands
+echo "Commands:"
+for cmd_file in "$REPO_ROOT"/.claude/commands/*.md; do
+  [ ! -f "$cmd_file" ] && continue
+  cmd_name=$(basename "$cmd_file" .md)
+  check_changes "command" "$cmd_file" "$cmd_name"
+done
+
+echo ""
+
+# Check agents
+echo "Agents:"
+for agent_file in "$REPO_ROOT"/.claude/agents/*.md; do
+  [ ! -f "$agent_file" ] && continue
+  agent_name=$(basename "$agent_file" .md)
+  check_changes "agent" "$agent_file" "$agent_name"
+done
+
+echo ""
+
+# Check hooks
+echo "Hooks:"
+hooks_dir="$REPO_ROOT/.claude/hooks"
+if [ -d "$hooks_dir" ]; then
+  if git diff --quiet "$BASE_REF" -- "$hooks_dir" 2>/dev/null; then
+    echo "  ✓ hooks (unchanged)"
+  else
+    echo "  CHANGED: hooks"
+    changes=$((changes + 1))
+  fi
+fi
+
+echo ""
+echo "=== Summary ==="
+echo "Comparing against: $BASE_REF"
+if [ $changes -eq 0 ]; then
+  echo "No atoms have changed"
+  exit 0
+else
+  echo "$changes atom(s) changed - consider version bump for affected plugins"
+  echo ""
+  echo "To see full diff for a specific atom:"
+  echo "  git diff $BASE_REF -- .claude/skills/SKILL_NAME/"
+  exit 1
+fi
+```
+
+### View Detailed Changes
+
+```bash
+# See what changed in a specific skill since last release
+git diff v1.0.0 -- .claude/skills/testing-patterns/
+
+# See commit history for a skill
+git log --oneline v1.0.0..HEAD -- .claude/skills/testing-patterns/
+
+# See which files changed in an atom
+git diff --name-only v1.0.0 -- .claude/skills/testing-patterns/
+```
+
+### Workflow
+
+1. **Before releasing**, check what changed:
+   ```bash
+   ./scripts/check-atom-changes.sh
+   # Or compare against a specific version:
+   ./scripts/check-atom-changes.sh v1.0.0
+   ```
+
+2. **For changed atoms**, bump version in:
+   - `plugins/{name}/.claude-plugin/plugin.json`
+   - `.claude-plugin/marketplace.json`
+
+3. **Tag the release**:
+   ```bash
+   git tag -a v1.1.0 -m "Release v1.1.0"
+   git push --tags
+   ```
+
+### CI Integration
+
+```yaml
+- name: Check for unreleased changes
+  run: |
+    # Fail if atoms changed since last tag but versions weren't bumped
+    ./scripts/check-atom-changes.sh
+```
+
+### Why Git-Based Tracking is Better
+
+| Aspect | Checksum File | Git-Based |
+|--------|---------------|-----------|
+| Extra files to maintain | Yes | No |
+| Shows what changed | Hash only | Full diff |
+| History | None | Complete |
+| Can get out of sync | Yes | No |
+| Works offline | Yes | Yes |
+| Native to workflow | No | Yes |
+
+### Quick Commands
+
+```bash
+# What changed since last tag?
+git diff $(git describe --tags --abbrev=0) -- .claude/
+
+# List commits touching a specific skill
+git log --oneline -- .claude/skills/testing-patterns/
+
+# Find which release introduced a change
+git log --tags --oneline -- .claude/skills/testing-patterns/SKILL.md
+```
