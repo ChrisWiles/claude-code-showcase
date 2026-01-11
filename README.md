@@ -1,5 +1,14 @@
 # Claude Code Project Configuration Showcase
 
+> **Install any of these skills, agents, commands, and hooks directly into your projects:**
+> ```
+> /plugin marketplace add aviadr1/claude-code-showcase
+> /plugin install testing-patterns@claude-code-showcase
+> ```
+> See [Plugin Marketplace](#plugin-marketplace) for all available plugins.
+
+---
+
 > Most software engineers are seriously sleeping on how good LLM agents are right now, especially something like Claude Code.
 
 Once you've got Claude Code set up, you can point it at your codebase, have it learn your conventions, pull in best practices, and refine everything until it's basically operating like a super-powered teammate. **The real unlock is building a solid set of reusable "[skills](#skills---domain-knowledge)" plus a few "[agents](#agents---specialized-assistants)" for the stuff you do all the time.**
