@@ -83,6 +83,7 @@ This repository is also a **Claude Code plugin marketplace**. You can install in
 | `ticket-workflow` | Bundle | `/ticket` + `/onboard` commands |
 | `docs-sync` | Command | Documentation synchronization |
 | `skill-activation` | Hook | Intelligent skill suggestions |
+| `plugin-marketplace` | Skill | Create marketplaces using symlinks |
 
 ### Architecture
 
