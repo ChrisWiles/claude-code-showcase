@@ -1,16 +1,5 @@
 {
   "mcpServers": {
-    "jira": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-jira"],
-      "env": {
-        "JIRA_HOST": "${JIRA_HOST}",
-        "JIRA_EMAIL": "${JIRA_EMAIL}",
-        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
-      }
-    },
-
     "github": {
       "type": "stdio",
       "command": "npx",
@@ -20,12 +9,52 @@
       }
     },
 
-    "linear": {
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "serena-agent", "serena", "--host", "${SERENA_HOST:-http://localhost:8384}"],
+      "env": {
+        "SERENA_API_KEY": "${SERENA_API_KEY}"
+      }
+    },
+
+    "context7": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@anthropic/mcp-linear"],
+      "args": ["-y", "@upstash/context7-mcp"],
       "env": {
-        "LINEAR_API_KEY": "${LINEAR_API_KEY}"
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      }
+    },
+
+    "surrealdb": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "surrealdb-mcp"],
+      "env": {
+        "SURREALDB_URL": "${SURREALDB_URL:-http://localhost:8081}",
+        "SURREALDB_USER": "${SURREALDB_USER:-root}",
+        "SURREALDB_PASS": "${SURREALDB_PASS:-root}",
+        "SURREALDB_NS": "${SURREALDB_NS:-claudia}",
+        "SURREALDB_DB": "${SURREALDB_DB:-main}"
+      }
+    },
+
+    "searxng": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-web-search"],
+      "env": {
+        "SEARXNG_URL": "${SEARXNG_URL:-http://localhost:8080}"
+      }
+    },
+
+    "ollama": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "ollama-mcp"],
+      "env": {
+        "OLLAMA_HOST": "${OLLAMA_HOST:-http://localhost:11434}"
       }
     },
 
@@ -39,15 +68,6 @@
       }
     },
 
-    "postgres": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-postgres"],
-      "env": {
-        "DATABASE_URL": "${DATABASE_URL}"
-      }
-    },
-
     "slack": {
       "type": "stdio",
       "command": "npx",
@@ -55,15 +75,6 @@
       "env": {
         "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
         "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
-      }
-    },
-
-    "notion": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-notion"],
-      "env": {
-        "NOTION_API_KEY": "${NOTION_API_KEY}"
       }
     },
 

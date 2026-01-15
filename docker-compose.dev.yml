@@ -1,0 +1,82 @@
+# Docker Compose for Development Services
+# This file sets up all required services for local development
+
+services:
+  # Ollama - Local LLM inference server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: claudia-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # SearXNG - Privacy-respecting metasearch engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: claudia-searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - searxng-data:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-ultrasecretkey}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # SurrealDB - Multi-model database
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: claudia-surrealdb
+    ports:
+      - "8081:8000"
+    volumes:
+      - surrealdb-data:/data
+    command: start --user root --pass ${SURREALDB_ROOT_PASSWORD:-root} file:/data/database.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ollama Proxy - OpenAI-compatible proxy for Ollama
+  ollama-proxy:
+    image: ghcr.io/ollama/ollama:latest
+    container_name: claudia-ollama-proxy
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OPENAI_API_BASE=http://localhost:8000/v1
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ollama-data:
+    driver: local
+  searxng-data:
+    driver: local
+  surrealdb-data:
+    driver: local
+
+networks:
+  default:
+    name: claudia-network
+    driver: bridge

@@ -1,0 +1,97 @@
+{
+  "name": "Claudia Development Container",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-contrib/features/curl-apt-get:1": {}
+  },
+  "forwardPorts": [3000, 8080, 8081, 8384, 11434],
+  "portsAttributes": {
+    "3000": {
+      "label": "Application",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "SearXNG",
+      "onAutoForward": "silent"
+    },
+    "8081": {
+      "label": "SurrealDB",
+      "onAutoForward": "silent"
+    },
+    "8384": {
+      "label": "Serena",
+      "onAutoForward": "silent"
+    },
+    "11434": {
+      "label": "Ollama",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "npm install && docker compose -f docker-compose.dev.yml up -d",
+  "postStartCommand": "docker compose -f docker-compose.dev.yml start",
+  "postAttachCommand": "echo '🚀 Development environment ready!'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "GitHub.vscode-pull-request-github",
+        "eamodio.gitlens",
+        "bradlc.vscode-tailwindcss",
+        "ZixuanChen.vitest-explorer",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "github.copilot.enable": {
+          "*": true,
+          "yaml": true,
+          "markdown": true,
+          "plaintext": false
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    },
+    "codespaces": {
+      "openFiles": ["README.md", "CLAUDE.md"]
+    }
+  },
+  "remoteEnv": {
+    "NODE_ENV": "development",
+    "OLLAMA_HOST": "http://localhost:11434",
+    "SEARXNG_HOST": "http://localhost:8080",
+    "SURREALDB_HOST": "http://localhost:8081"
+  },
+  "containerEnv": {
+    "TZ": "UTC"
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  }
+}

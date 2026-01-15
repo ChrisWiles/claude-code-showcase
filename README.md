@@ -4,6 +4,55 @@
 
 Once you've got Claude Code set up, you can point it at your codebase, have it learn your conventions, pull in best practices, and refine everything until it's basically operating like a super-powered teammate. **The real unlock is building a solid set of reusable "[skills](#skills---domain-knowledge)" plus a few "[agents](#agents---specialized-assistants)" for the stuff you do all the time.**
 
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 20+
+- GitHub CLI (`gh`)
+- Claude Code CLI
+
+### Development Setup
+
+1. **Clone and start services:**
+   ```bash
+   git clone https://github.com/bjoernbethge/Claudia.git
+   cd Claudia
+   docker compose -f docker-compose.dev.yml up -d
+   ```
+
+2. **Or use DevContainers (recommended):**
+   - Open in VS Code with Remote Containers extension
+   - Select "Reopen in Container"
+   - All services start automatically
+
+3. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+
+## 🏗️ Architecture
+
+### Local Services (Docker)
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **Ollama** | 11434 | Local LLM inference server |
+| **SearXNG** | 8080 | Privacy-respecting metasearch |
+| **SurrealDB** | 8081 | Multi-model database |
+
+### MCP Servers
+
+| Server | Purpose |
+|--------|---------|
+| **GitHub** | Issue tracking, PRs, repository management |
+| **Serena** | AI agent integration and orchestration |
+| **Context7** | Context retrieval and management |
+| **SurrealDB** | Database operations via MCP |
+| **SearXNG** | Web search via MCP |
+| **Ollama** | Local LLM inference via MCP |
+
 ### What This Looks Like in Practice
 
 **Custom UI Library?** We have a [skill that explains exactly how to use it](.claude/skills/core-components/SKILL.md). Same for [how we write tests](.claude/skills/testing-patterns/SKILL.md), [how we structure GraphQL](.claude/skills/graphql-schema/SKILL.md), and basically how we want everything done in our repo. So when Claude generates code, it already matches our patterns and standards out of the box.
@@ -17,13 +66,18 @@ Once you've got Claude Code set up, you can point it at your codebase, have it l
 - [Weekly code quality](.github/workflows/scheduled-claude-code-quality.yml) - Reviews random directories and auto-fixes issues
 - [Biweekly dependency audit](.github/workflows/scheduled-claude-code-dependency-audit.yml) - Safe dependency updates with test verification
 
+**Security Scanning?** Multiple layers of automated security:
+- [Semgrep SAST](.github/workflows/semgrep.yml) - Static analysis on every PR
+- [CodeQL Analysis](.github/workflows/codeql.yml) - GitHub's semantic code analysis
+- [Dependabot](.github/dependabot.yml) - Automated dependency updates
+
 **Intelligent Skill Suggestions?** We built a [skill evaluation system](#skill-evaluation-hooks) that analyzes every prompt and automatically suggests which skills Claude should activate based on keywords, file paths, and intent patterns.
 
 A ton of maintenance and quality work is just... automated. It runs ridiculously smoothly.
 
-**JIRA/Linear Integration?** We connect Claude Code to our ticket system via [MCP servers](.mcp.json). Now Claude can read the ticket, understand the requirements, implement the feature, update the ticket status, and even create new tickets if it finds bugs along the way. The [`/ticket` command](.claude/commands/ticket.md) handles the entire workflow—from reading acceptance criteria to linking the PR back to the ticket.
+**GitHub Issue Integration?** We connect Claude Code to GitHub Issues via [MCP servers](.mcp.json). Now Claude can read the issue, understand the requirements, implement the feature, update the issue status, and even create new issues if it finds bugs along the way. The [`/ticket` command](.claude/commands/ticket.md) handles the entire workflow—from reading acceptance criteria to linking the PR back to the issue.
 
-We even use Claude Code for ticket triage. It reads the ticket, digs into the codebase, and leaves a comment with what it thinks should be done. So when an engineer picks it up, they're basically starting halfway through already.
+We even use Claude Code for issue triage. It reads the issue, digs into the codebase, and leaves a comment with what it thinks should be done. So when an engineer picks it up, they're basically starting halfway through already.
 
 **There is so much low-hanging fruit here that it honestly blows my mind people aren't all over it.**
 
@@ -235,7 +289,7 @@ The main configuration file for hooks, environment variables, and permissions.
 
 ### MCP Servers - External Integrations
 
-MCP (Model Context Protocol) servers let Claude Code connect to external tools like JIRA, GitHub, Slack, databases, and more. This is how you enable workflows like "read a ticket, implement it, and update the ticket status."
+MCP (Model Context Protocol) servers let Claude Code connect to external tools like GitHub Issues, databases, search engines, and AI services. This is how you enable workflows like "read an issue, implement it, and link the PR."
 
 **Location:** `.mcp.json` (project root, committed to git for team sharing)
 
@@ -246,11 +300,11 @@ MCP (Model Context Protocol) servers let Claude Code connect to external tools l
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   Claude Code   │────▶│   MCP Server    │────▶│  External API   │
-│                 │◀────│  (local bridge) │◀────│  (JIRA, GitHub) │
+│                 │◀────│  (local bridge) │◀────│ (GitHub, etc.)  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
-MCP servers run locally and provide Claude with tools to interact with external services. When you configure a JIRA MCP server, Claude gets tools like `jira_get_issue`, `jira_update_issue`, `jira_create_issue`, etc.
+MCP servers run locally and provide Claude with tools to interact with external services. When you configure a GitHub MCP server, Claude gets tools like `github_get_issue`, `github_create_pr`, `github_add_comment`, etc.
 
 #### .mcp.json Format
 
@@ -274,25 +328,23 @@ MCP servers run locally and provide Claude with tools to interact with external 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `type` | Yes | Server type: `stdio` (local process) or `http` (remote) |
-| `command` | For stdio | Executable to run (e.g., `npx`, `python`) |
+| `command` | For stdio | Executable to run (e.g., `npx`, `python`, `uvx`) |
 | `args` | No | Command-line arguments |
 | `env` | No | Environment variables (supports `${VAR}` expansion) |
 | `url` | For http | Remote server URL |
 | `headers` | For http | HTTP headers for authentication |
 
-#### Example: JIRA Integration
+#### Example: GitHub Issues Integration
 
 ```json
 {
   "mcpServers": {
-    "jira": {
+    "github": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@anthropic/mcp-jira"],
+      "args": ["-y", "@anthropic/mcp-github"],
       "env": {
-        "JIRA_HOST": "${JIRA_HOST}",
-        "JIRA_EMAIL": "${JIRA_EMAIL}",
-        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
       }
     }
   }
@@ -300,18 +352,18 @@ MCP servers run locally and provide Claude with tools to interact with external 
 ```
 
 **What this enables:**
-- Read ticket details, acceptance criteria, and comments
-- Update ticket status (To Do → In Progress → In Review)
-- Add comments with progress updates
-- Create new tickets for bugs found during development
-- Link PRs to tickets
+- Read issue details, labels, and comments
+- Update issue labels and add comments
+- Create new issues for bugs found during development
+- Create PRs and link them to issues
+- Manage milestones and projects
 
 **Example workflow with [`/ticket` command](.claude/commands/ticket.md):**
 ```
-You: /ticket PROJ-123
+You: /ticket 42
 
 Claude:
-1. Fetching PROJ-123 from JIRA...
+1. Fetching Issue #42 from GitHub...
    "Add user profile avatar upload"
 
 2. Reading acceptance criteria...
@@ -322,41 +374,20 @@ Claude:
 3. Searching codebase for related files...
    Found: src/screens/Profile/ProfileScreen.tsx
 
-4. Creating branch: cw/PROJ-123-avatar-upload
+4. Creating branch: cw/42-avatar-upload
 
 5. [Implements feature...]
 
-6. Updating JIRA status to "In Review"
-   Adding comment: "PR #456 ready for review"
+6. Adding comment to Issue #42
+   "PR #56 ready for review"
 
-7. Creating PR linked to PROJ-123...
+7. Creating PR linked to Issue #42...
+   Body includes: "Closes #42"
 ```
 
 #### Common MCP Server Configurations
 
-**Issue Tracking:**
-```json
-{
-  "jira": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@anthropic/mcp-jira"],
-    "env": {
-      "JIRA_HOST": "${JIRA_HOST}",
-      "JIRA_EMAIL": "${JIRA_EMAIL}",
-      "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
-    }
-  },
-  "linear": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@anthropic/mcp-linear"],
-    "env": { "LINEAR_API_KEY": "${LINEAR_API_KEY}" }
-  }
-}
-```
-
-**Code & DevOps:**
+**Issue Tracking & Code:**
 ```json
 {
   "github": {
@@ -364,15 +395,52 @@ Claude:
     "command": "npx",
     "args": ["-y", "@anthropic/mcp-github"],
     "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+  }
+}
+```
+
+**AI Agent Integration:**
+```json
+{
+  "serena": {
+    "type": "stdio",
+    "command": "uvx",
+    "args": ["--from", "serena-agent", "serena", "--host", "${SERENA_HOST:-http://localhost:8384}"],
+    "env": { "SERENA_API_KEY": "${SERENA_API_KEY}" }
   },
-  "sentry": {
+  "context7": {
     "type": "stdio",
     "command": "npx",
-    "args": ["-y", "@anthropic/mcp-sentry"],
+    "args": ["-y", "@upstash/context7-mcp"],
+    "env": { "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}" }
+  }
+}
+```
+
+**Local Services (Docker):**
+```json
+{
+  "surrealdb": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "surrealdb-mcp"],
     "env": {
-      "SENTRY_AUTH_TOKEN": "${SENTRY_AUTH_TOKEN}",
-      "SENTRY_ORG": "${SENTRY_ORG}"
+      "SURREALDB_URL": "${SURREALDB_URL:-http://localhost:8081}",
+      "SURREALDB_USER": "${SURREALDB_USER:-root}",
+      "SURREALDB_PASS": "${SURREALDB_PASS:-root}"
     }
+  },
+  "searxng": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "@anthropic/mcp-web-search"],
+    "env": { "SEARXNG_URL": "${SEARXNG_URL:-http://localhost:8080}" }
+  },
+  "ollama": {
+    "type": "stdio",
+    "command": "npx",
+    "args": ["-y", "ollama-mcp"],
+    "env": { "OLLAMA_HOST": "${OLLAMA_HOST:-http://localhost:11434}" }
   }
 }
 ```
@@ -392,18 +460,6 @@ Claude:
 }
 ```
 
-**Databases:**
-```json
-{
-  "postgres": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@anthropic/mcp-postgres"],
-    "env": { "DATABASE_URL": "${DATABASE_URL}" }
-  }
-}
-```
-
 #### Environment Variables
 
 MCP configs support variable expansion:
@@ -412,9 +468,9 @@ MCP configs support variable expansion:
 
 Set these in your shell profile or `.env` file (don't commit secrets!):
 ```bash
-export JIRA_HOST="https://yourcompany.atlassian.net"
-export JIRA_EMAIL="you@company.com"
-export JIRA_API_TOKEN="your-api-token"
+export GITHUB_TOKEN="ghp_your-github-token"
+export SERENA_API_KEY="your-serena-key"
+export CONTEXT7_API_KEY="your-context7-key"
 ```
 
 #### Settings for MCP
@@ -901,13 +957,17 @@ Commit everything except:
 | [CLAUDE.md](CLAUDE.md) | Example project memory file |
 | [.claude/settings.json](.claude/settings.json) | Full hooks configuration |
 | [.claude/settings.md](.claude/settings.md) | Human-readable hooks documentation |
-| [.mcp.json](.mcp.json) | MCP server configuration (JIRA, GitHub, Slack, etc.) |
+| [.mcp.json](.mcp.json) | MCP server configuration (GitHub, Serena, Context7, etc.) |
+| **Development Environment** | |
+| [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) | VS Code DevContainer configuration |
+| [docker-compose.dev.yml](docker-compose.dev.yml) | Docker services (Ollama, SearXNG, SurrealDB) |
+| [.github/copilot-instructions.md](.github/copilot-instructions.md) | GitHub Copilot configuration |
 | **Agents** | |
 | [.claude/agents/code-reviewer.md](.claude/agents/code-reviewer.md) | Comprehensive code review agent |
 | [.claude/agents/github-workflow.md](.claude/agents/github-workflow.md) | Git workflow agent |
 | **Commands** | |
 | [.claude/commands/onboard.md](.claude/commands/onboard.md) | Deep task exploration |
-| [.claude/commands/ticket.md](.claude/commands/ticket.md) | **JIRA/Linear ticket workflow (read → implement → update)** |
+| [.claude/commands/ticket.md](.claude/commands/ticket.md) | **GitHub Issue workflow (read → implement → PR)** |
 | [.claude/commands/pr-review.md](.claude/commands/pr-review.md) | PR review workflow |
 | [.claude/commands/pr-summary.md](.claude/commands/pr-summary.md) | Generate PR summary |
 | [.claude/commands/code-quality.md](.claude/commands/code-quality.md) | Quality checks |
@@ -924,10 +984,14 @@ Commit everything except:
 | [.claude/skills/core-components/SKILL.md](.claude/skills/core-components/SKILL.md) | Design system, tokens |
 | [.claude/skills/formik-patterns/SKILL.md](.claude/skills/formik-patterns/SKILL.md) | Form handling, validation |
 | **GitHub Workflows** | |
+| [.github/workflows/ci.yml](.github/workflows/ci.yml) | CI pipeline (lint, test, build) |
+| [.github/workflows/semgrep.yml](.github/workflows/semgrep.yml) | Semgrep security scanning |
+| [.github/workflows/codeql.yml](.github/workflows/codeql.yml) | CodeQL analysis |
 | [.github/workflows/pr-claude-code-review.yml](.github/workflows/pr-claude-code-review.yml) | Auto PR review |
 | [.github/workflows/scheduled-claude-code-docs-sync.yml](.github/workflows/scheduled-claude-code-docs-sync.yml) | Monthly docs sync |
 | [.github/workflows/scheduled-claude-code-quality.yml](.github/workflows/scheduled-claude-code-quality.yml) | Weekly quality review |
 | [.github/workflows/scheduled-claude-code-dependency-audit.yml](.github/workflows/scheduled-claude-code-dependency-audit.yml) | Biweekly dependency audit |
+| [.github/dependabot.yml](.github/dependabot.yml) | Dependabot configuration |
 
 ---
 
