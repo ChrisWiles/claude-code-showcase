@@ -30,7 +30,7 @@ services:
       - searxng-data:/etc/searxng
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080
-      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-ultrasecretkey}
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-changeme-generate-random-key}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
@@ -54,19 +54,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Ollama Proxy - OpenAI-compatible proxy for Ollama
-  ollama-proxy:
-    image: ghcr.io/ollama/ollama:latest
-    container_name: claudia-ollama-proxy
-    ports:
-      - "8000:8000"
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-      - OPENAI_API_BASE=http://localhost:8000/v1
-    depends_on:
-      ollama:
-        condition: service_healthy
-    restart: unless-stopped
+  # Note: Ollama already provides an OpenAI-compatible API endpoint at /v1
+  # This service is optional and can be used if you need additional proxy features
+  # To use Ollama's built-in OpenAI compatibility, just use http://localhost:11434/v1
 
 volumes:
   ollama-data:

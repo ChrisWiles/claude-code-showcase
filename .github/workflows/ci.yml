@@ -100,5 +100,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check if build script exists
+        id: check-build
+        run: |
+          if npm run --silent build 2>&1 | grep -q "Missing script"; then
+            echo "has_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_build=true" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
       - name: Build
-        run: npm run build --if-present
+        if: steps.check-build.outputs.has_build == 'true'
+        run: npm run build

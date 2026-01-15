@@ -30,7 +30,7 @@
       "onAutoForward": "silent"
     }
   },
-  "postCreateCommand": "npm install && docker compose -f docker-compose.dev.yml up -d",
+  "postCreateCommand": "npm install || true && docker compose -f docker-compose.dev.yml up -d",
   "postStartCommand": "docker compose -f docker-compose.dev.yml start",
   "postAttachCommand": "echo '🚀 Development environment ready!'",
   "customizations": {
