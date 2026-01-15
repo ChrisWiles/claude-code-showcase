@@ -2,8 +2,8 @@ name: Scheduled - Code Quality Review
 
 on:
   schedule:
-    # Run every Sunday at 8 AM UTC
-    - cron: '0 8 * * 0'
+    # Run on the 1st of each month at 8 AM UTC
+    - cron: '0 8 1 * *'
   workflow_dispatch:
     inputs:
       num_dirs:

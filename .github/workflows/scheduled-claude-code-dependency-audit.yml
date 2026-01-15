@@ -2,8 +2,8 @@ name: Scheduled - Dependency Audit
 
 on:
   schedule:
-    # Run every 2 weeks (1st and 15th of each month) at 10 AM UTC
-    - cron: '0 10 1,15 * *'
+    # Run on the 1st of each month at 10 AM UTC
+    - cron: '0 10 1 * *'
   workflow_dispatch:
 
 concurrency:
