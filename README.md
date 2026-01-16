@@ -936,6 +936,7 @@ Commit everything except:
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Code Action](https://github.com/anthropics/claude-code-action) - GitHub Action
 - [Anthropic API](https://docs.anthropic.com/en/api)
+- [claude-speed-reader](https://github.com/SeanZoR/claude-speed-reader) by [Sean Oliver](https://github.com/SeanZoR) - Speed read Claude's responses at 600+ WPM using RSVP with Spritz-style ORP (Optimal Recognition Point) highlighting. The red focus letter stays fixed while words flow around it, eliminating eye movement for 2-3x faster reading.
 
 ---
 
