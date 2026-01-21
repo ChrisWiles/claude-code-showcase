@@ -3,8 +3,20 @@ name: Semgrep Security Scan
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '**.txt'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '**.txt'
   schedule:
     # Run weekly on Monday at 8 AM UTC
     - cron: '0 8 * * 1'
