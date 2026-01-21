@@ -22,13 +22,19 @@ cp .env.example .env
 npm install
 ```
 
-### 2. Start Services
+### 2. Start All Services (Single Container)
+
+The easiest way using Make:
 
 ```bash
+# Build and start all services in one container
+make up
+
+# Or manually with docker compose
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-This starts:
+This starts **ONE container** with all services:
 - **Ollama** (port 11434): Local LLM inference
 - **SearXNG** (port 8080): Privacy-respecting search
 - **SurrealDB** (port 8081): Multi-model database
@@ -37,17 +43,32 @@ This starts:
 ### 3. Verify Services
 
 ```bash
-# Check all services are running
-docker compose -f docker-compose.dev.yml ps
+# Quick health check
+make health
 
-# Test Ollama
-curl http://localhost:11434/api/tags
+# Or manually
+docker compose -f docker-compose.dev.yml exec claudia-dev /usr/local/bin/healthcheck.sh
 
-# Test SearXNG
-curl http://localhost:8080
+# View logs
+make logs
 
-# Test SurrealDB
-curl http://localhost:8081/health
+# Open shell in container
+make shell
+```
+
+### 4. Useful Make Commands
+
+```bash
+make help      # Show all available commands
+make up        # Start services
+make down      # Stop services
+make restart   # Restart services
+make logs      # View logs
+make shell     # Open bash shell
+make health    # Check service health
+make models    # Pull recommended Ollama models
+make clean     # Remove containers (keep data)
+make prune     # Remove everything (DESTRUCTIVE)
 ```
 
 ## Environment Variables
@@ -209,6 +230,58 @@ Every Monday at 9 AM UTC:
 - Makes fixes (docs, tests, performance, etc.)
 - Creates PR with improvements
 
+## Docker Architecture
+
+Claudia uses an **all-in-one multi-service container** for development:
+
+### Why Single Container?
+
+- ✅ **Simpler**: One command to start everything
+- ✅ **Faster**: Less overhead than multiple containers
+- ✅ **Easier networking**: All services on same network
+- ✅ **Resource efficient**: Shared base image and dependencies
+
+### Service Management
+
+All services are managed by **Supervisor** inside the container:
+- Automatic restarts on failure
+- Centralized logging
+- Health checks for all services
+- Graceful shutdown
+
+### Data Persistence
+
+Data is stored in Docker volumes:
+- `ollama-data`: Models and cache
+- `surrealdb-data`: Database files
+- `searxng-data`: Search engine config
+- `serena-data`: Code analysis cache
+
+### Accessing Services
+
+From your host machine:
+```bash
+# Ollama API
+curl http://localhost:11434/api/tags
+
+# SurrealDB HTTP
+curl http://localhost:8081/health
+
+# SearXNG web interface
+open http://localhost:8080
+
+# Serena API
+curl http://localhost:8384/health
+```
+
+From inside the container:
+```bash
+# All services use localhost
+make shell
+# Inside container:
+curl http://localhost:11434/api/version
+```
+
 ## Troubleshooting
 
 ### Hooks Failing
@@ -222,17 +295,60 @@ chmod +x .claude/hooks/*.sh
 bash .claude/hooks/format-check.sh
 ```
 
+### Docker Services Not Starting
+
+```bash
+# Check container status
+docker compose -f docker-compose.dev.yml ps
+
+# View logs
+make logs
+# Or: docker compose -f docker-compose.dev.yml logs
+
+# Check health
+make health
+
+# Restart services
+make restart
+
+# Rebuild if needed
+make down
+make build
+make up
+```
+
+### Individual Service Issues
+
+```bash
+# Open shell in container
+make shell
+
+# Inside container, check supervisor status
+supervisorctl status
+
+# Restart specific service
+supervisorctl restart ollama
+supervisorctl restart surrealdb
+
+# View service logs
+tail -f /var/log/supervisor/ollama.out.log
+tail -f /var/log/supervisor/surrealdb.out.log
+```
+
 ### MCP Servers Not Working
 
 ```bash
-# Check Docker services
-docker compose -f docker-compose.dev.yml ps
+# Check if container is running
+docker ps | grep claudia-dev
 
-# Restart services
-docker compose -f docker-compose.dev.yml restart
+# Verify ports are exposed
+docker port claudia-dev-env
 
-# Check logs
-docker compose -f docker-compose.dev.yml logs ollama
+# Test connections
+curl http://localhost:11434/api/version  # Ollama
+curl http://localhost:8081/health        # SurrealDB
+curl http://localhost:8080/              # SearXNG
+curl http://localhost:8384/health        # Serena
 ```
 
 ### TypeScript Errors in Hooks

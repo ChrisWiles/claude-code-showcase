@@ -1,72 +1,73 @@
-# Docker Compose for Development Services
-# This file sets up all required services for local development
+# Claudia Development Environment
+# All-in-One Multi-Service Container
 
 services:
-  # Ollama - Local LLM inference server
-  ollama:
-    image: ollama/ollama:latest
-    container_name: claudia-ollama
+  claudia-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: claudia-dev-env
+    image: claudia-dev:latest
     ports:
-      - "11434:11434"
+      - "8080:8080"   # SearXNG
+      - "8081:8000"   # SurrealDB (internal 8000, exposed as 8081)
+      - "8384:8384"   # Serena
+      - "11434:11434" # Ollama
     volumes:
-      - ollama-data:/root/.ollama
+      # Persist data across container restarts
+      - ollama-data:/data/ollama
+      - surrealdb-data:/data/surrealdb
+      - searxng-data:/data/searxng
+      - serena-data:/data/serena
+      # Optional: Mount your code for development
+      - .:/workspace:cached
     environment:
+      # Ollama configuration
       - OLLAMA_HOST=0.0.0.0
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      - OLLAMA_MODELS=/data/ollama/models
+      - OLLAMA_DEFAULT_MODELS=${OLLAMA_DEFAULT_MODELS:-llama2}
 
-  # SearXNG - Privacy-respecting metasearch engine
-  searxng:
-    image: searxng/searxng:latest
-    container_name: claudia-searxng
-    ports:
-      - "8080:8080"
-    volumes:
-      - searxng-data:/etc/searxng
-    environment:
-      - SEARXNG_BASE_URL=http://localhost:8080
+      # SurrealDB configuration
+      - SURREALDB_USER=${SURREALDB_USER:-root}
+      - SURREALDB_PASS=${SURREALDB_PASS:-root}
+      - SURREALDB_NS=${SURREALDB_NS:-claudia}
+      - SURREALDB_DB=${SURREALDB_DB:-main}
+
+      # SearXNG configuration
       - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-changeme-generate-random-key}
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL:-http://localhost:8080}
+
+      # Serena configuration
+      - SERENA_API_KEY=${SERENA_API_KEY:-dev-key}
+
+      # Playwright configuration
+      - PLAYWRIGHT_HEADLESS=${PLAYWRIGHT_HEADLESS:-true}
+      - PLAYWRIGHT_BROWSER=${PLAYWRIGHT_BROWSER:-chromium}
+
+      # General
+      - TZ=UTC
+      - WORKSPACE=/workspace
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      test: ["/usr/local/bin/healthcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # SurrealDB - Multi-model database
-  surrealdb:
-    image: surrealdb/surrealdb:latest
-    container_name: claudia-surrealdb
-    ports:
-      - "8081:8000"
-    volumes:
-      - surrealdb-data:/data
-    command: start --user root --pass ${SURREALDB_ROOT_PASSWORD:-root} file:/data/database.db
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Note: Ollama already provides an OpenAI-compatible API endpoint at /v1
-  # This service is optional and can be used if you need additional proxy features
-  # To use Ollama's built-in OpenAI compatibility, just use http://localhost:11434/v1
+      start_period: 60s
+    networks:
+      - claudia-network
 
 volumes:
   ollama-data:
     driver: local
+  surrealdb-data:
+    driver: local
   searxng-data:
     driver: local
-  surrealdb-data:
+  serena-data:
     driver: local
 
 networks:
-  default:
-    name: claudia-network
+  claudia-network:
     driver: bridge
+    name: claudia-network

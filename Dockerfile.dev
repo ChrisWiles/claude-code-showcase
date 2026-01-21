@@ -1,0 +1,106 @@
+# Claudia Development Environment
+# All-in-One Multi-Service Container
+# Includes: Ollama, SearXNG, SurrealDB, Serena, Playwright
+
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    NODE_VERSION=20
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Core utilities
+    curl \
+    wget \
+    git \
+    build-essential \
+    supervisor \
+    # Python for Serena
+    python3.11 \
+    python3.11-pip \
+    python3.11-venv \
+    # Node.js dependencies
+    ca-certificates \
+    gnupg \
+    # SurrealDB dependencies
+    libssl3 \
+    # Playwright dependencies
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libatspi2.0-0 \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest
+
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Install SurrealDB
+RUN curl -sSf https://install.surrealdb.com | sh
+
+# Install Python dependencies and Serena
+RUN python3.11 -m pip install --upgrade pip setuptools wheel && \
+    python3.11 -m pip install serena-agent uvicorn fastapi
+
+# Install Playwright and browsers
+RUN npm install -g playwright && \
+    npx playwright install chromium --with-deps
+
+# Create directory structure
+RUN mkdir -p \
+    /data/ollama \
+    /data/surrealdb \
+    /data/searxng \
+    /data/serena \
+    /var/log/supervisor \
+    /etc/supervisor/conf.d
+
+# Install SearXNG from source (lightweight setup)
+WORKDIR /opt
+RUN git clone --depth 1 --branch master https://github.com/searxng/searxng.git searxng && \
+    cd searxng && \
+    python3.11 -m pip install -e .
+
+# Copy supervisor configuration
+COPY supervisor-services.conf /etc/supervisor/conf.d/services.conf
+
+# Copy health check script
+COPY healthcheck.sh /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/healthcheck.sh
+
+# Copy startup script
+COPY startup.sh /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/startup.sh
+
+# Expose all service ports
+EXPOSE 8080 8081 8384 11434
+
+# Set working directory
+WORKDIR /workspace
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /usr/local/bin/healthcheck.sh
+
+# Start all services via supervisor
+CMD ["/usr/local/bin/startup.sh"]
