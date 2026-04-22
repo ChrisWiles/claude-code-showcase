@@ -1,4 +1,5 @@
 ---
+name: pr-summary
 description: Generate a summary for the current branch changes
 allowed-tools: Bash(git:*)
 ---

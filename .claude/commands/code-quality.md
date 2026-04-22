@@ -1,4 +1,5 @@
 ---
+name: code-quality
 description: Run code quality checks on a directory
 allowed-tools: Read, Glob, Grep, Bash(npm:*), Bash(npx:*)
 ---

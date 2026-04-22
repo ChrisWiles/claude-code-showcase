@@ -1,4 +1,5 @@
 ---
+name: docs-sync
 description: Check if documentation is in sync with code
 allowed-tools: Read, Glob, Grep, Bash(git:*)
 ---

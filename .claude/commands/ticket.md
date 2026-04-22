@@ -1,4 +1,5 @@
 ---
+name: ticket
 description: Work on a JIRA/Linear ticket end-to-end
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(git:*), Bash(gh:*), Bash(npm:*), mcp__jira__*, mcp__github__*, mcp__linear__*
 ---
