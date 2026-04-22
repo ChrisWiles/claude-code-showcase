@@ -10,8 +10,8 @@ Review the pull request: $ARGUMENTS
 ## Instructions
 
 1. **Get PR information**:
-   - Run `gh pr view $ARGUMENTS` to get PR details
-   - Run `gh pr diff $ARGUMENTS` to see changes
+   - Run `gh pr view "$ARGUMENTS"` to get PR details
+   - Run `gh pr diff "$ARGUMENTS"` to see changes
 
 2. **Read review standards**:
    - Read `.claude/agents/code-reviewer.md` for the review checklist
