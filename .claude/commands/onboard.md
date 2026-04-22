@@ -1,3 +1,9 @@
+---
+name: onboard
+description: Onboard Claude to a new task by exploring the codebase and preparing a task brief
+allowed-tools: Read, Glob, Grep, Write, Bash(find:*)
+---
+
 # Onboard
 
 You are given the following context:
