@@ -15,7 +15,7 @@ Review code quality in: $ARGUMENTS
 
 2. **Run automated checks**:
    ```bash
-   npm run lint -- $ARGUMENTS
+   npm run lint -- "$ARGUMENTS"
    npm run typecheck
    ```
 
