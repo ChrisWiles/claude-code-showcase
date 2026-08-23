@@ -64,6 +64,7 @@ Before implementing ANY task, check if relevant skills apply:
 - GraphQL operations → `graphql-schema` skill
 - Debugging issues → `systematic-debugging` skill
 - UI components → `react-ui-patterns` skill
+- Researching public X data → `x-research` skill
 
 ## Common Commands
 

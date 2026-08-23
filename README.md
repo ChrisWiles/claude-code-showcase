@@ -79,6 +79,8 @@ your-project/
 │   │   │   └── SKILL.md
 │   │   ├── graphql-schema/
 │   │   │   └── SKILL.md
+│   │   ├── x-research/
+│   │   │   └── SKILL.md
 │   │   └── ...
 │   │
 │   └── rules/                     # Modular instructions (optional)
@@ -250,7 +252,7 @@ MCP (Model Context Protocol) servers let Claude Code connect to external tools l
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
-MCP servers run locally and provide Claude with tools to interact with external services. When you configure a JIRA MCP server, Claude gets tools like `jira_get_issue`, `jira_update_issue`, `jira_create_issue`, etc.
+MCP servers can run locally over `stdio` or remotely over HTTP. When you configure a JIRA MCP server, Claude gets tools like `jira_get_issue`, `jira_update_issue`, `jira_create_issue`, etc.
 
 #### .mcp.json Format
 
@@ -279,6 +281,7 @@ MCP servers run locally and provide Claude with tools to interact with external 
 | `env` | No | Environment variables (supports `${VAR}` expansion) |
 | `url` | For http | Remote server URL |
 | `headers` | For http | HTTP headers for authentication |
+| `oauth.scopes` | No | Space-separated OAuth scopes to request from a remote server |
 
 #### Example: JIRA Integration
 
@@ -330,6 +333,37 @@ Claude:
    Adding comment: "PR #456 ready for review"
 
 7. Creating PR linked to PROJ-123...
+```
+
+#### Example: Remote HTTP with OAuth
+
+Remote HTTP servers need a `type` and `url`. Claude Code can discover OAuth
+from the server and store tokens outside the repository.
+
+```json
+{
+  "mcpServers": {
+    "xquik": {
+      "type": "http",
+      "url": "https://xquik.com/mcp",
+      "oauth": {
+        "scopes": "mcp:tools"
+      }
+    }
+  }
+}
+```
+
+Run `/mcp`, review the project server, then authenticate `xquik`. The
+[x-research skill](.claude/skills/x-research/SKILL.md) keeps public X research
+read-only and bounded by default. It requires approval before writes, private
+reads, monitors, webhooks, or metered bulk work. See the
+[Xquik MCP contract](https://docs.xquik.com/mcp/overview) for current behavior.
+
+Validate the configuration and prompt routing:
+
+```bash
+node --test tests/xquik-mcp.test.js
 ```
 
 #### Common MCP Server Configurations
@@ -631,6 +665,7 @@ Skills are markdown documents that teach Claude project-specific patterns and co
 - [graphql-schema](.claude/skills/graphql-schema/SKILL.md) - Queries, mutations, codegen
 - [core-components](.claude/skills/core-components/SKILL.md) - Design system, tokens
 - [formik-patterns](.claude/skills/formik-patterns/SKILL.md) - Form handling, validation
+- [x-research](.claude/skills/x-research/SKILL.md) - Bounded public X research over remote MCP
 
 #### SKILL.md Frontmatter Fields
 
@@ -923,6 +958,7 @@ Commit everything except:
 | [.claude/skills/graphql-schema/SKILL.md](.claude/skills/graphql-schema/SKILL.md) | Queries, mutations, codegen |
 | [.claude/skills/core-components/SKILL.md](.claude/skills/core-components/SKILL.md) | Design system, tokens |
 | [.claude/skills/formik-patterns/SKILL.md](.claude/skills/formik-patterns/SKILL.md) | Form handling, validation |
+| [.claude/skills/x-research/SKILL.md](.claude/skills/x-research/SKILL.md) | Public X research with read-only defaults and approval gates |
 | **GitHub Workflows** | |
 | [.github/workflows/pr-claude-code-review.yml](.github/workflows/pr-claude-code-review.yml) | Auto PR review |
 | [.github/workflows/scheduled-claude-code-docs-sync.yml](.github/workflows/scheduled-claude-code-docs-sync.yml) | Monthly docs sync |
