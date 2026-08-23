@@ -67,6 +67,14 @@
       }
     },
 
+    "xquik": {
+      "type": "http",
+      "url": "https://xquik.com/mcp",
+      "oauth": {
+        "scopes": "mcp:tools"
+      }
+    },
+
     "memory": {
       "type": "stdio",
       "command": "npx",

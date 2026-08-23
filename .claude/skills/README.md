@@ -21,6 +21,7 @@ This directory contains project-specific skills that provide Claude with domain 
 | Skill | Description |
 |-------|-------------|
 | [graphql-schema](./graphql-schema/SKILL.md) | GraphQL queries, mutations, code generation |
+| [x-research](./x-research/SKILL.md) | Bounded public X research through a remote OAuth MCP server |
 
 ## Skill Combinations for Common Tasks
 
@@ -38,6 +39,10 @@ This directory contains project-specific skills that provide Claude with domain 
 ### Debugging an Issue
 1. **systematic-debugging** - Root cause analysis
 2. **testing-patterns** - Write failing test first
+
+### Researching Public X Data
+1. **x-research** - Collect bounded public-post evidence
+2. **documentation** - Cite sources and preserve evidence boundaries
 
 ## How Skills Work
 

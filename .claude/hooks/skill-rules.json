@@ -195,6 +195,26 @@
         "contentPatterns": ["Analytics\\.log", "logEvent", "Sentry\\."]
       }
     },
+    "x-research": {
+      "description": "Public X post, profile, trend, and conversation research through Xquik MCP",
+      "priority": 8,
+      "triggers": {
+        "keywords": ["x research", "twitter research", "search tweets", "search x posts", "tweet search", "x sentiment", "x trends", "xquik"],
+        "keywordPatterns": [
+          "\\b(?:tweets?|twitter|x posts?)\\b.*\\b(?:research|search|trend|sentiment|monitor)\\b",
+          "\\b(?:research|search|find|analy[sz]e|monitor)\\b.*\\b(?:tweets?|twitter|x posts?)\\b",
+          "\\bx (?:sentiment|trends)\\b",
+          "\\bxquik\\b"
+        ],
+        "intentPatterns": [
+          "(?:research|search|find|analy[sz]e|monitor).*(?:public x|x posts?|tweets?|twitter)",
+          "(?:summarize|compare|track).*(?:x conversation|x reaction|tweet)",
+          "(?:check|analy[sz]e|research).*(?:x sentiment|x trends)"
+        ],
+        "contextPatterns": ["public x data", "recent x posts", "x sentiment", "x trends"]
+      },
+      "excludePatterns": ["x[- ]axis", "twitter (?:button|icon|logo)", "share (?:button|icon)"]
+    },
     "list-pagination": {
       "description": "FlashList, pagination, infinite scroll patterns",
       "priority": 5,
