@@ -317,6 +317,21 @@
         ]
       },
       "relatedSkills": ["systematic-debugging"]
+    },
+    "marketing-mindset": {
+      "description": "Marketer's decision framework for GTM, positioning and copy",
+      "priority": 7,
+      "triggers": {
+        "keywords": ["marketing", "positioning", "go-to-market", "gtm", "landing page", "cold email", "outreach", "offer", "ad copy", "campaign"],
+        "keywordPatterns": ["\\bmarketing\\b", "\\bpositioning\\b", "\\blanding page\\b", "\\bcold (?:email|outreach)\\b", "\\bad copy\\b"],
+        "intentPatterns": [
+          "(?:write|draft|review).*(?:copy|landing page|ad|outreach|email)",
+          "how.*(?:get|find).*(?:first customers|first clients)",
+          "(?:positioning|offer).*(?:for|of)"
+        ],
+        "contextPatterns": ["go to market", "first customers", "conversion"]
+      },
+      "relatedSkills": ["react-ui-patterns"]
     }
   }
 }

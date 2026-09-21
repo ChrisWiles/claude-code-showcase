@@ -631,6 +631,7 @@ Skills are markdown documents that teach Claude project-specific patterns and co
 - [graphql-schema](.claude/skills/graphql-schema/SKILL.md) - Queries, mutations, codegen
 - [core-components](.claude/skills/core-components/SKILL.md) - Design system, tokens
 - [formik-patterns](.claude/skills/formik-patterns/SKILL.md) - Form handling, validation
+- [marketing-mindset](.claude/skills/marketing-mindset/SKILL.md) - Marketer's decision framework: volume floors, kill rules
 
 #### SKILL.md Frontmatter Fields
 
@@ -923,6 +924,7 @@ Commit everything except:
 | [.claude/skills/graphql-schema/SKILL.md](.claude/skills/graphql-schema/SKILL.md) | Queries, mutations, codegen |
 | [.claude/skills/core-components/SKILL.md](.claude/skills/core-components/SKILL.md) | Design system, tokens |
 | [.claude/skills/formik-patterns/SKILL.md](.claude/skills/formik-patterns/SKILL.md) | Form handling, validation |
+| [.claude/skills/marketing-mindset/SKILL.md](.claude/skills/marketing-mindset/SKILL.md) | Marketer's decision framework: volume floors, kill rules |
 | **GitHub Workflows** | |
 | [.github/workflows/pr-claude-code-review.yml](.github/workflows/pr-claude-code-review.yml) | Auto PR review |
 | [.github/workflows/scheduled-claude-code-docs-sync.yml](.github/workflows/scheduled-claude-code-docs-sync.yml) | Monthly docs sync |

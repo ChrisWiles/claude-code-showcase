@@ -22,6 +22,11 @@ This directory contains project-specific skills that provide Claude with domain 
 |-------|-------------|
 | [graphql-schema](./graphql-schema/SKILL.md) | GraphQL queries, mutations, code generation |
 
+### Marketing & Growth
+| Skill | Description |
+|-------|-------------|
+| [marketing-mindset](./marketing-mindset/SKILL.md) | Marketer's decision framework: test volume floors, channel kill rules, positioning, offers, cold outreach |
+
 ## Skill Combinations for Common Tasks
 
 ### Building a New Feature
@@ -38,6 +43,10 @@ This directory contains project-specific skills that provide Claude with domain 
 ### Debugging an Issue
 1. **systematic-debugging** - Root cause analysis
 2. **testing-patterns** - Write failing test first
+
+### Planning a Launch or Writing Copy
+1. **marketing-mindset** - Positioning, offer, test volume floors and kill rules
+2. **react-ui-patterns** - Loading/error/empty states for the landing page or waitlist
 
 ## How Skills Work
 
