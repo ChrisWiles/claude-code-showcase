@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "parallel": {
+      "type": "http",
+      "url": "https://mcp.parallel.ai/mcp?tools=web_search",
+      "headers": {
+        "User-Agent": "claude-code-showcase/public-sources"
+      }
+    }
+  }
+}

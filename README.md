@@ -404,6 +404,25 @@ Claude:
 }
 ```
 
+#### Example: Verify Public Documentation
+
+For a documentation check, try the optional [public-source configuration](examples/public-sources.mcp.json). It connects to Parallel's remote MCP server and exposes only `web_search`. No Parallel key is needed for rate-limited anonymous search; Claude Code still needs its usual authentication. See [Parallel MCP setup](https://docs.parallel.ai/integrations/mcp/quickstart).
+
+From this repository's root, run:
+
+```bash
+claude -p 'Use Parallel web_search to find the official Node.js documentation for node --test. Explain how to run tests and cite the source URL. If search fails, report the error.' \
+  --mcp-config ./examples/public-sources.mcp.json \
+  --strict-mcp-config \
+  --setting-sources '' \
+  --tools '' \
+  --allowedTools mcp__parallel__web_search
+```
+
+The [CLI flags](https://code.claude.com/docs/en/cli-reference) limit this invocation to the supplied MCP configuration, skip user/project/local settings (including this showcase's hooks), disable built-in tools, and approve only the search tool. They do not persist configuration changes. Managed policies still apply.
+
+Check that the answer includes a source URL such as `https://nodejs.org/api/test.html`. A connection or rate-limit error is a failed check; retry later rather than treating an uncited answer as verified. Omit this example's flags to return to your usual configuration.
+
 #### Environment Variables
 
 MCP configs support variable expansion:
